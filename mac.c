@@ -782,7 +782,7 @@ static int _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	{
 		/* PG */
 		pkt[x++] = 0x80;
-		pkt[x++] = 0x0E;
+		pkt[x++] = 0x0D;
 		
 		/* Parameter ACCM */
 		pkt[x++] = 0x88;
@@ -1752,10 +1752,9 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		/* Update the aspect ratio flag */
 		s->mac.ratio = (s->ratio <= (14.0 / 9.0) ? 0 : 1);
 		
-		/* Push a service information packet at the start of each new
-		 * frame. Alternates between DG0 and DG3 each frame. DG0 is
-		 * added to both subframes for D-MAC */
-		switch(l->frame % 3)
+		/* Push the DG0 and DG3 SI packets every four frames.
+		 * DG0 is sent on both subframes for D-MAC. */
+		switch(l->frame & 3)
 		{
 		case 0: /* Write DG0 to 1st and 2nd subframes */
 			
