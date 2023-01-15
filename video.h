@@ -45,6 +45,7 @@ typedef struct vid_t vid_t;
 #include "subtitles.h"
 #include "vits.h"
 #include "graphics.h"
+#include "vitc.h"
 
 /* Return codes */
 #define VID_OK             0
@@ -211,6 +212,7 @@ typedef struct {
 	int subtitles;
 	int txsubtitles;
 	int vits;
+	int vitc;
 	char *eurocrypt;
 	int ec_mat_rating;
 	char *ec_ppv;
@@ -423,6 +425,9 @@ struct vid_t {
 	
 	/* VITS state */
 	vits_t vits;
+	
+	/* VITC state */
+	vitc_t vitc;
 	
 	/* Audio state */
 	int audio;
