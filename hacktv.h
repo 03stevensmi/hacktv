@@ -115,6 +115,7 @@ typedef struct {
 	char *ec_ppv;
 	int nodate;
 	int invert_video;
+	int secam_field_id;
 	char *ffmt;
 	char *fopts;
 	
