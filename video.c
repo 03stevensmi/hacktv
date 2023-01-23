@@ -2949,16 +2949,17 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 				rw = 15e-6;
 			}
 			
-			for(x = s->burst_left; x < s->active_left + s->active_width; x++)
+			for(x = 0; x < s->width; x++)
 			{
-				double t = (double) (x - s->burst_left) / s->pixel_rate / rw;
+				double t = (double) (x - s->active_left) / s->pixel_rate / rw;
 				
-				if(t > 1) t = 1;
+				if(t < 0) t = 0;
+				else if(t > 1) t = 1;
 				
 				l->output[x * 2 + 1] = level + dev * t;
 			}
 			
-			sl = s->burst_left;
+			sl = s->active_left;
 			sr = s->active_left + s->active_width;
 			
 			l->vbialloc = 1;
