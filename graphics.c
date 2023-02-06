@@ -38,6 +38,8 @@ const pngs_t png_logos[] = {
 	{ "multichoice",    _png_multichoice,    IMG_POS_TR, sizeof(_png_multichoice) },
 	{ "skyone",         _png_skyone,         IMG_POS_TL, sizeof(_png_skyone) },
 	{ "sky",            _png_sky,            IMG_POS_BR, sizeof(_png_sky) },
+	{ "spacetoon",      _png_spacetoon,      IMG_POS_BR, sizeof(_png_spacetoon) },
+	{ "viva",           _png_viva,           IMG_POS_BR, sizeof(_png_viva) },
 	{ NULL,             NULL,                0,          0 }
 };
 
