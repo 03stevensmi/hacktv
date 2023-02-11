@@ -40,6 +40,7 @@ const pngs_t png_logos[] = {
 	{ "sky",            _png_sky,            IMG_POS_BR, sizeof(_png_sky) },
 	{ "spacetoon",      _png_spacetoon,      IMG_POS_TR, sizeof(_png_spacetoon) },
 	{ "viva",           _png_viva,           IMG_POS_TR, sizeof(_png_viva) },
+	{ "foxkids",        _png_foxkids,        IMG_POS_TL, sizeof(_png_foxkids) },
 	{ NULL,             NULL,                0,          0 }
 };
 
