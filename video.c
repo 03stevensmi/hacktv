@@ -291,6 +291,8 @@ const vid_config_t vid_config_pal = {
 	.output_type    = HACKTV_INT16_REAL,
 	
 	.level          = 1.0, /* Overall signal level */
+	.fm_mono_level  = 0.22, /* FM audio carrier power level */
+	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	.video_level    = 1.0, /* Power level of video */
 	
 	.video_bw       = 6.0e6,
@@ -329,6 +331,13 @@ const vid_config_t vid_config_pal = {
 	.iv_co          = 0.877,
 	.qu_co          = 0.493,
 	.qv_co          = 0.000,
+	
+	.fm_mono_carrier   = 6000000 - 400, /* Hz */
+	.fm_mono_deviation = 50000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US,
+	
+	.nicam_carrier  = 6552000, /* Hz */
+	.nicam_beta     = 1.0,
 };
 
 const vid_config_t vid_config_pal_m = {
