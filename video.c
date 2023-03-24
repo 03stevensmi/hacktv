@@ -107,17 +107,15 @@ const vid_config_t vid_config_pal_i = {
 const vid_config_t vid_config_pal_bg = {
 	
 	/* System B/G (PAL) */
-	.output_type    = HACKTV_INT16_COMPLEX,
-	
-	.modulation     = VID_VSB,
-	.vsb_upper_bw   = 5000000, /* Hz */
-	.vsb_lower_bw   =  750000, /* Hz */
+	.output_type    = HACKTV_INT16_REAL,
 	
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 0.71, /* Power level of video */
-	.fm_mono_level  = 0.15, /* FM audio carrier power level */
+	.am_audio_level = 0.2, /* Power level of audio */
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
+	
+	.video_bw       = 5.0e6,
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -154,28 +152,26 @@ const vid_config_t vid_config_pal_bg = {
 	.qu_co          = 0.493,
 	.qv_co          = 0.000,
 	
-	.fm_mono_carrier   = 5500000, /* Hz */
-	.fm_mono_deviation = 50000, /* +/- Hz */
-	.fm_mono_preemph   = VID_50US, /* Seconds */
+	/* AM modulated */
+	.am_mono_carrier = -4000000, /* Hz */
+	.am_mono_bandwidth = 10000, /* Hz */
 	
-	.nicam_carrier  = 5850000, /* Hz */
+	.nicam_carrier  = 4550000, /* Hz */
 	.nicam_beta     = 0.4,
 };
 
 const vid_config_t vid_config_pal_dk = {
 	
 	/* System D/K (PAL) */
-	.output_type    = HACKTV_INT16_COMPLEX,
-	
-	.modulation     = VID_VSB,
-	.vsb_upper_bw   = 6000000, /* Hz */
-	.vsb_lower_bw   =  750000, /* Hz */
+	.output_type    = HACKTV_INT16_REAL,
 	
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 0.70, /* Power level of video */
-	.fm_mono_level  = 0.20, /* FM audio carrier power level */
+	.am_audio_level = 0.2, /* Power level of audio */
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
+	
+	.video_bw       = 6.0e6,
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -212,12 +208,11 @@ const vid_config_t vid_config_pal_dk = {
 	.qu_co          = 0.493,
 	.qv_co          = 0.000,
 	
-	.fm_mono_carrier   = 6500000, /* Hz */
-	.fm_mono_deviation = 50000, /* +/- Hz */
-	.fm_mono_preemph   = VID_50US,
-
-	/* Chinese standard GY/T 129-1997, similar to French standard. */
-	.nicam_carrier  = 5850000, /* Hz */
+	/* AM modulated */
+	.am_mono_carrier = -4000000, /* Hz */
+	.am_mono_bandwidth = 10000, /* Hz */
+	
+	.nicam_carrier  = 4550000, /* Hz */
 	.nicam_beta     = 0.4,
 };
 
@@ -226,12 +221,12 @@ const vid_config_t vid_config_pal_fm = {
 	/* PAL FM (satellite) */
 	.output_type    = HACKTV_INT16_REAL,
 	
-	.level          = 0.8, /* Overall signal level */
+	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 1.00, /* Power level of video */
+	.video_level    = 0.75, /* Power level of video */
 	.fm_mono_level  = 0.06, /* FM audio carrier power level */
-	//.fm_left_level  = 0.04, /* FM stereo left audio carrier power level */
-	//.fm_right_level = 0.04, /* FM stereo right audio carrier power level */
+	// .fm_left_level  = 0.04, /* FM stereo left audio carrier power level */
+	// .fm_right_level = 0.04, /* FM stereo right audio carrier power level */
 	
 	.video_bw       = 5.5e6,
 	
@@ -271,7 +266,7 @@ const vid_config_t vid_config_pal_fm = {
 	.qv_co          = 0.000,
 	
 	.fm_mono_carrier   = 6500000, /* Hz */
-	.fm_mono_deviation = 85000, /* +/- Hz */
+	.fm_mono_deviation = 60000, /* +/- Hz */
 	.fm_mono_preemph   = VID_50US, /* Seconds */
 	
 	// .fm_left_carrier   = 7020000, /* Hz */
