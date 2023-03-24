@@ -143,7 +143,7 @@ fi
 if [[ ! -f $PREFIX/lib/libiconv.a ]]; then
 
 	if [[ ! -f libiconv-1.17.tar.gz ]]; then
-	wget https://ftp.gnu.org/gnu/libiconv/libiconv-1.17.tar.gz
+		wget https://ftp.gnu.org/gnu/libiconv/libiconv-1.17.tar.gz
 		tar xzvf libiconv-1.17.tar.gz
 	fi
 
@@ -178,20 +178,20 @@ fi
 # termiWin
 if [[ ! -f $PREFIX/lib/libtermiwin.a ]]; then
 
-        if [[ ! -d termiwin ]]; then
-                git clone --depth 1 https://github.com/steeviebops/termiWin.git termiwin
-        fi
+	if [[ ! -d termiwin ]]; then
+		git clone --depth 1 https://github.com/steeviebops/termiWin.git termiwin
+	fi
 
-        rm -rf termiwin/build
-        mkdir -p termiwin/build
-        cd termiwin/build
-        cmake .. \
-                -DCMAKE_SYSTEM_NAME=Windows \
-                -DCMAKE_C_COMPILER=$HOST-gcc \
-                -DCMAKE_CXX_COMPILER=$HOST-g++ \
-                -DCMAKE_INSTALL_PREFIX=$PREFIX \
-                -DTERMIWIN_DONOTREDEFINE=yes
-        make -j4 install
+	rm -rf termiwin/build
+	mkdir -p termiwin/build
+	cd termiwin/build
+	cmake .. \
+		-DCMAKE_SYSTEM_NAME=Windows \
+		-DCMAKE_C_COMPILER=$HOST-gcc \
+		-DCMAKE_CXX_COMPILER=$HOST-g++ \
+		-DCMAKE_INSTALL_PREFIX=$PREFIX \
+		-DTERMIWIN_DONOTREDEFINE=yes
+	make -j4 install
 	cd ../..
 fi
 
