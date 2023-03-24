@@ -290,12 +290,12 @@ const vid_config_t vid_config_pal = {
 	/* Composite PAL */
 	.output_type    = HACKTV_INT16_REAL,
 	
-	.level          = 1.0, /* Overall signal level */
+	.level          = 0.71, /* Overall signal level */
 	.am_audio_level = 0.2, /* Power level of audio */
 	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	.video_level    = 1.0, /* Power level of video */
 	
-	.video_bw       = 6.0e6,
+	.video_bw       = 5.5e6,
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -333,10 +333,10 @@ const vid_config_t vid_config_pal = {
 	.qv_co          = 0.000,
 	
 	/* AM modulated */
-	.am_mono_carrier = -3500000, /* Hz */
-	.am_mono_bandwidth = 10000, /* Hz */
+	.am_mono_carrier = -1250000, /* Hz */
+	.am_mono_bandwidth = 6300, /* Hz */
 	
-	.nicam_carrier  = 4000000, /* Hz */
+	.nicam_carrier  = 4550000, /* Hz */
 	.nicam_beta     = 1.0,
 };
 
