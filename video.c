@@ -1,4 +1,4 @@
-/* hacktv - Analogue video transmitter for the HackRF                    */
+//* hacktv - Analogue video transmitter for the HackRF                    */
 /*=======================================================================*/
 /* Copyright 2017 Philip Heron <phil@sanslogic.co.uk>                    */
 /*                                                                       */
