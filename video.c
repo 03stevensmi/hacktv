@@ -3434,11 +3434,8 @@ static int _init_vfilter(vid_t *s)
 	else if(s->conf.modulation == VID_AM ||
 	        s->conf.modulation == VID_NONE)
 	{
-		double taps[51];
-		
-		ntaps = 51;
-		
-		fir_low_pass(taps, ntaps, s->sample_rate, s->conf.video_bw, 0.75e6, 1);
+		const double *taps = fm_625_2025_taps;
+		ntaps = sizeof(fm_625_2025_taps) / sizeof(double);
 		fir_int16_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
 	}
 	
