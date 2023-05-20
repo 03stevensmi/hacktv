@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include "video.h"
+#include "videocrypt-ca.h"
 
 #define VC_SAMPLE_RATE         14000000
 #define VC_WIDTH               (VC_SAMPLE_RATE / 25 / 625)
@@ -50,30 +51,31 @@
 #define VC2_VBI_FIELD_2_START (VC_VBI_FIELD_2_START - 4)
 
 typedef struct {
-	uint8_t mode;
-	uint64_t codeword;
-	uint8_t messages[7][32];
-} _vc_block_t;
-
-typedef struct {
-	uint8_t mode;
-	uint64_t codeword;
-	uint8_t messages[8][32];
-} _vc2_block_t;
+	const char *id;          /* Name of Videocrypt mode */
+	const int cwtype;        /* Static or dynamic CW */
+	const int mode;          /* Mode */
+	_vc_block_t  *blocks;    /* VC1 blocks */
+	_vc2_block_t *blocks2;   /* VC2 blocks */
+	const int len;           /* Block length */
+	const int emm;           /* EMM mode? */
+	const char *channelname; /* Channel/display name */
+	const int channelid;     /* Channel ID */
+	const int date;          /* Broadcast date */
+} _vc_mode_t;
 
 typedef struct {
 	
 	uint8_t counter;
 	
 	/* VC1 blocks */
-	const _vc_block_t *blocks;
+	_vc_block_t *blocks;
 	size_t block;
 	size_t block_len;
 	uint8_t message[32];
 	uint8_t vbi[VC_VBI_BYTES_PER_LINE * VC_VBI_LINES_PER_FRAME];
 	
 	/* VC2 blocks */
-	const _vc2_block_t *blocks2;
+	_vc2_block_t *blocks2;
 	size_t block2;
 	size_t block2_len;
 	uint8_t message2[32];
@@ -87,6 +89,12 @@ typedef struct {
 	
 	int video_scale[VC_WIDTH];
 	
+	const char *vcmode1;
+	const char *vcmode2;
+	const _vc_mode_t *mode;
+	
+	
+	uint8_t ppv_card_data[7];
 } vc_t;
 
 extern int vc_init(vc_t *s, vid_t *vs, const char *mode, const char *mode2);

@@ -42,6 +42,8 @@
 #define MAC_VSAM_CONTROLLED_ACCESS_DOUBLE_CUT 4 /* 100: controlled access, double-cut component rotation scrambling */
 #define MAC_VSAM_CONTROLLED_ACCESS_SINGLE_CUT 6 /* 110: controlled access, single-cut line rotation scrambling */
 
+#define MAC_OVERLAP 3
+
 /* Video aspect ratios */
 #define MAC_RATIO_4_3  0
 #define MAC_RATIO_16_9 1
@@ -53,6 +55,7 @@
 /* Number of bits and bytes in a packet payload */
 #define MAC_PAYLOAD_BITS  728
 #define MAC_PAYLOAD_BYTES 91
+#define MAC_DG_BYTES 45
 
 /* Number of packets in the transmit queue */
 #define MAC_QUEUE_LEN 12
@@ -114,6 +117,14 @@ typedef struct {
 } mac_subframe_t;
 
 typedef struct {
+	int emode;						/* Eurocrypt M or S2 mode */
+	unsigned char key[7];			/* Decryption key */
+	unsigned char data[42];			/* General ECM data */
+	unsigned char decevencw[8];		/* Decrypted even control word */
+	unsigned char decoddcw[8];		/* Decrypted odd control word */
+} ec_t ;
+
+typedef struct {
 	
 	/* Input audio */
 	const int16_t *audio;
@@ -172,6 +183,9 @@ typedef struct {
 	/* 1 = Teletext enabled */
 	int teletext;
 	
+	/* 1 = Teletext subtitles enabled */
+	int txsubtitles;
+	
 	/* UDT (Unified Date and Time) sequence */
 	uint8_t udt[25];
 	
@@ -207,6 +221,7 @@ typedef struct {
 	/* Eurocrypt state */
 	int eurocrypt;
 	eurocrypt_t ec;
+	int ec_mat_rating;
 	
 } mac_t;
 

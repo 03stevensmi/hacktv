@@ -23,6 +23,8 @@
 #include "video.h"
 #include "mac.h"
 
+#define EC_S 0x01
+
 /* MAC sync codes */
 #define MAC_CLAMP 0xEAF3927FUL
 #define MAC_LSW   0x0B
@@ -38,7 +40,7 @@ static const uint8_t _hamming[0x10] = {
 };
 
 /* Network origin and name */
-static const char *_nwo    = "hacktv";
+static const char *_nwo    = "UNITED KINGDOM";
 static const char *_nwname = "hacktv";
 
 /* Service Reference */
@@ -520,13 +522,24 @@ static void _update_udt(uint8_t udt[25], time_t timestamp)
 	struct tm tm;
 	int i, mjd;
 	
-	/* Get the timezone offset */
-	localtime_r(&timestamp, &tm);
-	i = tm.tm_gmtoff / 1800;
-	if(i < 0) i = -i | (1 << 5);
+	/* Windows implements localtime differently, using localtime_s rather than localtime_r */
+	#ifndef WIN32
+		/* Get the timezone offset */
+		localtime_r(&timestamp, &tm);
+		i = tm.tm_gmtoff / 1800;
+		if(i < 0) i = -i | (1 << 5);
+		
+		gmtime_r(&timestamp, &tm);
+	#else
+		/* Get the timezone offset */
+		localtime_s(&tm, &timestamp);
+		i = _timezone / 1800;
+		if(i < 0) i = -i | (1 << 5);
+		
+		gmtime_s(&tm, &timestamp);
+	#endif
 	
 	/* Calculate Modified Julian Date */
-	gmtime_r(&timestamp, &tm);
 	mjd = 367.0 * (1900 + tm.tm_year)
 	    - (int) (7.0 * (1900 + tm.tm_year + (int) ((1 + tm.tm_mon + 9.0) / 12.0)) / 4.0)
 	    + (int) (275.0 * (1 + tm.tm_mon) / 9.0) + tm.tm_mday - 678987.0;
@@ -652,15 +665,24 @@ static void _read_packet(mac_t *s, _mac_packet_queue_item_t *pkt, int subframe)
 	sf->queue.len--;
 }
 
-static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES])
+static void _crc_packet(uint8_t pkt[MAC_PAYLOAD_BYTES])
 {
 	int x;
 	uint16_t b;
 	
-	memset(pkt, 0, MAC_PAYLOAD_BYTES);
+	/* Generate the overall packet CRC (excludes PT and CRC) */
+	x = MAC_PAYLOAD_BYTES;
+	b = _crc16(&pkt[1], x - 3);
+	pkt[x - 2] = (b & 0x00FF) >> 0;
+	pkt[x - 1] = (b & 0xFF00) >> 8;
+}
+
+static int _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES * 2])
+{
+	int x;
+	uint16_t b;
 	
-	/* PT Packet Type */
-	pkt[0] = 0xF8;
+	memset(pkt, 0, MAC_PAYLOAD_BYTES * 2);
 	
 	/* DGH (Data Group Header) */
 	pkt[1] = _hamming[0];		/* TG data group type */
@@ -703,6 +725,37 @@ static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES])
 	pkt[x++] = (b & 0x00FF) >> 0;	/* TV config LSB */
 	pkt[x++] = (b & 0xFF00) >> 8;	/* TV config MSB */
 	
+	/* Parameter LISTX (OTA - for EMMs) */
+	pkt[x++] = 0x18;				/* PI LISTX (List of index values) */
+	pkt[x++] = 0x04;				/* LI Length (4 bytes) */
+	pkt[x++] = 0x04;				/* Over-air addressing service */
+	pkt[x++] = 0x01;				/* Index value 1 */
+	b  = 4 << 12;					/* Over-air addressing, detailed description = DG4 */
+	b |= 1 << 10;					/* Subframe identification, TDMCID = 01 */
+	b |= s->ec.emm_addr;			/* Packet address of EMM */
+	pkt[x++] = (b & 0x00FF) >> 0;	/* OTA config LSB */
+	pkt[x++] = (b & 0xFF00) >> 8;	/* OTA config MSB */
+
+	/* COMD - pointer to direct commentary (DCOM) */
+	pkt[x++] = 0x61;	/* PI  */
+	pkt[x++] = 0x03;	/* LI Length (3 bytes) */
+	pkt[x++] = 0x09;	/* Language - English */
+	b  = 9 << 12;		/* Network data, detailed description = DG9 */
+	b |= 1 << 10;		/* Subframe identification, TDMCID = 01 */
+	b |= 0;				/* Packet address of EMM */
+	pkt[x++] = (b & 0x00FF) >> 0;	
+	pkt[x++] = (b & 0xFF00) >> 8;	
+	
+	/* TIMD - pointer to time (TIME) */
+	pkt[x++] = 0x62;	/* PI  */
+	pkt[x++] = 0x03;	/* LI Length (3 bytes) */
+	pkt[x++] = 0x09;	/* Language - English */
+	b  = 9 << 12;		/* Network data, detailed description = DG9 */
+	b |= 1 << 10;		/* Subframe identification, TDMCID = 01 */
+	b |= 0;				/* Packet address of EMM */
+	pkt[x++] = (b & 0x00FF) >> 0;	
+	pkt[x++] = (b & 0xFF00) >> 8;	
+
 	/* Update the CI command length */
 	pkt[10] = x - pkt[10];
 	
@@ -716,28 +769,15 @@ static void _create_si_dg0_packet(mac_t *s, uint8_t pkt[MAC_PAYLOAD_BYTES])
 	pkt[6] = _hamming[(x & 0xF0) >> 4];
 	pkt[7] = _hamming[(x & 0x0F) >> 0];
 	
-	/* Test if the data is too large for a single packet */
-	if(x > 45 - 2)
-	{
-		fprintf(stderr, "SI DG0 packet overflow (%d/43 bytes)\n", x);
-	}
-	
-	/* Generate the overall packet CRC (excludes PT and CRC) */
-	x = MAC_PAYLOAD_BYTES;
-	b = _crc16(&pkt[1], x - 3);
-	pkt[x - 2] = (b & 0x00FF) >> 0;
-	pkt[x - 1] = (b & 0xFF00) >> 8;
+	return x + 1;
 }
 
-static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
+static int _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 {
 	int x;
 	uint16_t b;
 	
-	memset(pkt, 0, MAC_PAYLOAD_BYTES);
-	
-	/* PT Packet Type */
-	pkt[0] = 0xF8;
+	memset(pkt, 0, MAC_PAYLOAD_BYTES * 2);
 	
 	/* DGH (Data Group Header) */
 	pkt[1] = _hamming[3];           /* TG data group type */
@@ -759,7 +799,18 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	pkt[x++] = 1;			/* Index value 1 */
 	strcpy((char *) &pkt[x], _sname);
 	x += strlen(_sname);
-	
+
+	char pref[32] = "HackTV Broadcast";
+	/* Parameter PREF */
+	pkt[x++] = 0x48;		/* PI Service Reference */
+	pkt[x++] = strlen(pref) + 4;
+	pkt[x++] = 0x0F;
+	pkt[x++] = 0x00;
+	pkt[x++] = 0x00;
+	pkt[x++] = 0x00;
+	strcpy((char *) &pkt[x], pref);
+	x += strlen(pref);
+
 	if(s->eurocrypt)
 	{
 		/* PG */
@@ -768,14 +819,17 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 		
 		/* Parameter ACCM */
 		pkt[x++] = 0x88;
-		pkt[x++] = 0x03;        /* Packet length = 3 */
+		pkt[x++] = 0x04;        /* Packet length = 4 */
 		b  = 1 << 15;           /* 0: Absence of ECM, 1: Presence of ECM */
 		b |= 0 << 14;           /* 0: CW derived 'by other means', 1: CW derived from CAFCNT */
 		b |= 1 << 10;           /* Subframe related location - TDMCID 01 */
 		b |= s->ec.ecm_addr;    /* Address 346 */
 		pkt[x++] = (b & 0x00FF) >> 0;
 		pkt[x++] = (b & 0xFF00) >> 8;
-		pkt[x++] = 0x40;        /* Eurocrypt */
+		pkt[x++] = s->ec.mode->packet_type != EC_S ? 0x40 : 0x20; 
+								/* Eurocrypt S or M/S2 */
+		pkt[x++] = s->ec.mode->packet_type != EC_S ? s->ec.mode->packet_type & 0x30 : 0x01 ;
+		                        /* Eurocrypt algo (M, S or S2) */
 	}
 	
 	/* Parameter VCONF */
@@ -783,13 +837,10 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	pkt[x++] = 1;		/* LI Length (1 byte) */
 	
 	b  = 1 << 5;		/* Always 001 */
-	//b |= 0 << 4;		/* Aspect ratio: 0: 4:3, 1: 16:9 -- note: inverse of line 625 flag */
-	b |= s->ratio << 4;
+	b |= s->ratio << 4;	/* Aspect ratio: 0: 4:3, 1: 16:9 -- note: inverse of line 625 flag */
 	b |= 0 << 3;		/* Compression ratio: always 0 for Cy = 3:2, Cu = 3:1 */
+	
 	/* VSAM Vision scrambling and access mode (3 bits) */
-	//b |= 0 << 2;		/* Access type: 0: Free access, 1: Controlled access */
-	//b |= 0 << 1;		/* Scramble type: 0: Double-cut rotation, 1: single-cut line rotation */
-	//b |= 1 << 0;		/* Scrambled: 0: Scrambled, 1: Unscrambled */
 	b |= s->vsam << 0;
 	pkt[x++] = b;
 	
@@ -814,6 +865,19 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 		pkt[x++] = (b & 0xFF00) >> 8;
 	}
 	
+	if(s->txsubtitles)	
+	{
+		/* Parameter DCINF F8 - subtitle pointer to page 888 */
+		pkt[x++] = 0xF8;        /* PI CCIR system B subtitles */
+		pkt[x++] = 3;           /* LI Length (3 bytes) */
+		pkt[x++] = 0x09;        /* Language = English */
+		
+		b  = 0x00 << 1;         /* Magazine number */
+		b |= 0x88 << 0;         /* Page number */
+		pkt[x++] = (b & 0x00FF) >> 0;
+		pkt[x++] = (b & 0xFF00) >> 8;
+	}
+	
 	/* Update the CI command length */
 	pkt[10] = x - pkt[10];
 	
@@ -827,17 +891,127 @@ static void _create_si_dg3_packet(mac_t *s, uint8_t *pkt)
 	pkt[6] = _hamming[(x & 0xF0) >> 4];
 	pkt[7] = _hamming[(x & 0x0F) >> 0];
 	
-	/* Test if the data is too large for a single packet */
-	if(x > 45 - 2)
+	return x + 1;
+}
+
+static int _create_si_dg4_packet(mac_t *s, uint8_t *pkt, int golay)
+{
+	int x;
+	uint16_t b;
+	
+	memset(pkt, 0, MAC_PAYLOAD_BYTES);
+	
+	/* PT Packet Type */
+	pkt[0] = golay ? 0x00 : 0xF8;
+	
+	/* DGH (Data Group Header) */
+	pkt[1] = _hamming[4];           /* TG data group type */
+	pkt[2] = _hamming[0];           /* C  data group continuity */
+	pkt[3] = _hamming[15];          /* R  data group repetition */
+	pkt[4] = _hamming[0];           /* S1 MSB number of packets carrying the data group */
+	pkt[5] = _hamming[1];           /* S2 LSB number of packets carrying the data group */
+	pkt[6] = _hamming[0];           /* F1 MSB number of data group bytes in the last packet */
+	pkt[7] = _hamming[0];           /* F2 LSB number of data group bytes in the last packet */
+	pkt[8] = _hamming[1];           /* N  data group suffix indicator */
+	
+	pkt[9]  = 0xC0;                 /* OTA Command (Medium Priority) */
+	pkt[10] = 11;                   /* LI Length (bytes, everything following up until the DGS) */
+	x = 11;
+	
+	/* Parameter SREF */
+	pkt[x++] = 0x40;		/* PI Service Reference */
+	pkt[x++] = 1 + strlen(_sname);	/* LI Length */
+	pkt[x++] = 1;			/* Index value 1 */
+	strcpy((char *) &pkt[x], _sname);
+	x += strlen(_sname);
+	
+	/* Parameter ACMM */
+	if(s->eurocrypt && s->ec.emmode->id != NULL)
 	{
-		fprintf(stderr, "SI DG3 packet overflow (%d/43 bytes)\n", x);
+		pkt[x++] = 0x78;
+		pkt[x++] = 0x04;        /* Packet length = 4 */
+		b  = 1 << 10;           /* Subframe related location - TDMCID 01 */
+		b |= s->ec.emm_addr;    /* Address 347 */
+		pkt[x++] = (b & 0x00FF) >> 0;
+		pkt[x++] = (b & 0xFF00) >> 8;
+		pkt[x++] = s->ec.mode->packet_type != EC_S ? 0x40 : 0x20; 
+								/* Eurocrypt S or M/S2 */
+		pkt[x++] = s->ec.mode->packet_type != EC_S ? s->ec.mode->packet_type & 0x30 : 0x01 ;
+		                        /* Eurocrypt algo (M, S or S2) */
 	}
 	
-	/* Generate the overall packet CRC (excludes PT and CRC) */
-	x = MAC_PAYLOAD_BYTES;
-	b = _crc16(&pkt[1], x - 3);
-	pkt[x - 2] = (b & 0x00FF) >> 0;
-	pkt[x - 1] = (b & 0xFF00) >> 8;
+	/* Update the CI command length */
+	pkt[10] = x - pkt[10];
+	
+	/* Generate the DGS CRC */
+	b = _crc16(&pkt[9], pkt[10] + 2);
+	pkt[x++] = (b & 0x00FF) >> 0;
+	pkt[x++] = (b & 0xFF00) >> 8;
+	
+	/* Update the DGH length */
+	x -= 1;
+	pkt[6] = _hamming[(x & 0xF0) >> 4];
+	pkt[7] = _hamming[(x & 0x0F) >> 0];
+	
+	return x + 1;
+}
+
+static int _create_si_dg9_packet(mac_t *s, uint8_t *pkt)
+{
+	int x;
+	uint16_t b;
+	
+	memset(pkt, 0, MAC_PAYLOAD_BYTES);
+	
+	/* PT Packet Type */
+	pkt[0] = 0xF8;
+	
+	/* DGH (Data Group Header) */
+	pkt[1] = _hamming[9];           /* TG data group type */
+	pkt[2] = _hamming[0];           /* C  data group continuity */
+	pkt[3] = _hamming[15];          /* R  data group repetition */
+	pkt[4] = _hamming[0];           /* S1 MSB number of packets carrying the data group */
+	pkt[5] = _hamming[1];           /* S2 LSB number of packets carrying the data group */
+	pkt[6] = _hamming[0];           /* F1 MSB number of data group bytes in the last packet */
+	pkt[7] = _hamming[0];           /* F2 LSB number of data group bytes in the last packet */
+	pkt[8] = _hamming[1];           /* N  data group suffix indicator */
+	
+	pkt[9]  = 0x11;                 /* Network Command (Low Priority) */
+	pkt[10] = 11;                   /* LI Length (bytes, everything following up until the DGS) */
+	x = 11;
+
+	/* Parameter TIME */
+	char t[32];
+    time_t now = time(0);
+    strftime (t, 32, "%d/%m/%Y %H:%M:%S", localtime (&now));
+
+	pkt[x++] = 0x20;		/* PI Service Reference */
+	pkt[x++] = strlen(t);
+	strcpy((char *) &pkt[x], t);
+	x += strlen(t);
+	
+	char dcom[32] = "MAC transmission via HackTV";
+	/* Parameter DCOM */
+	pkt[x++] = 0x60;		/* PI Service Reference */
+	pkt[x++] = strlen(dcom) + 1;
+	pkt[x++] = 0x09;
+	strcpy((char *) &pkt[x], dcom);
+	x += strlen(dcom);
+	
+	/* Update the CI command length */
+	pkt[10] = x - pkt[10];
+	
+	/* Generate the DGS CRC */
+	b = _crc16(&pkt[9], pkt[10] + 2);
+	pkt[x++] = (b & 0x00FF) >> 0;
+	pkt[x++] = (b & 0xFF00) >> 8;
+	
+	/* Update the DGH length */
+	x -= 1;
+	pkt[6] = _hamming[(x & 0xF0) >> 4];
+	pkt[7] = _hamming[(x & 0x0F) >> 0];
+	
+	return x + 1;
 }
 
 static int _calculate_audio_address(int channels, int quality, int protection, int mode, int index)
@@ -878,7 +1052,9 @@ int mac_init(vid_t *s)
 	
 	mac->vsam = MAC_VSAM_FREE_ACCESS;
 	
-	/* Initialise Eurocrypt, if required */
+	mac->ec_mat_rating = s->conf.ec_mat_rating ? s->conf.ec_mat_rating : 0;
+	
+	/* Initalise Eurocrypt, if required */
 	if(s->conf.eurocrypt)
 	{
 		mac->vsam = MAC_VSAM_CONTROLLED_ACCESS;
@@ -889,6 +1065,9 @@ int mac_init(vid_t *s)
 		{
 			return(i);
 		}
+		
+		/* Update service name */
+		_sname = _nwname = s->mac.ec.mode->channame;
 	}
 	
 	/* Configure scrambling */
@@ -917,6 +1096,7 @@ int mac_init(vid_t *s)
 	}
 	
 	mac->teletext = (s->conf.teletext ? 1 : 0);
+	mac->txsubtitles = (s->conf.txsubtitles ? 1 : 0);
 	
 	_update_udt(s->mac.udt, time(NULL));
 	
@@ -1018,6 +1198,39 @@ int mac_write_packet(vid_t *s, int subframe, int address, int continuity, const 
 	sf->queue.len++;
 	
 	return(0);
+}
+
+static void _write_dg_packet(vid_t *s, uint8_t *pkt, int x, int m, int golay)
+{
+	int c, i;
+	
+	/* Calculate number of continuities */
+	c = ceil((float) x / (float) (MAC_DG_BYTES - 2));
+	
+	/* Break up packets, if needed */
+	for(i = 0; i < c; i++)
+	{
+		uint8_t p[MAC_PAYLOAD_BYTES];
+		memset(p, 0, MAC_PAYLOAD_BYTES);
+		
+		/* Copy SI packet in 45-byte chunks */
+		memcpy(p + 1, pkt + (i * MAC_DG_BYTES) + 1, MAC_PAYLOAD_BYTES - 1);
+		
+		/* PT Packet Type */
+		p[0] = golay ? (i ? 0x3F : 0x00) : (i ? 0xC7 : 0xF8);
+		
+		/* Tack CRC on the end of the packet */
+		_crc_packet(p);
+		
+		if(golay) mac_golay_encode(p + 1, 30);
+		
+		mac_write_packet(s, 0, 0x000, i, p, 0);
+		
+		if(m == 0 && s->conf.mac_mode == MAC_MODE_D)
+		{
+			mac_write_packet(s, 1, 0x000, i, p, 0);
+		}
+	}
 }
 
 int mac_write_audio(vid_t *s, mac_audioenc_t *enc, int subframe, const int16_t *audio, int len)
@@ -1473,7 +1686,7 @@ static int _line_625(vid_t *s, int frame, int line, uint8_t *data, int x)
 	dx = _bits(df, dx, b, 8);
 	
 	dx = _bits(df, dx, (frame >> 8) & 0xFFFFF, 20);    /* CAFCNT Conditional access frame count */
-	dx = _bits(df, dx, 1, 1);                          /* Rp Replacement */
+	dx = _bits(df, dx, 1, 1);                          /* Rp Repacement */
 	dx = _bits(df, dx, 1, 1);                          /* Fp Fingerprint */
 	dx = _bits(df, dx, 3, 2);                          /* Unallocated, both bits set to 1 */
 	dx = _bits(df, dx, 0, 1);                          /* SIFT Service identification channel format */
@@ -1582,15 +1795,15 @@ static void _rotate(vid_t *s, int16_t *output, int x1, int x2, int xc)
 {
 	int x;
 	
-	xc = s->mac.video_scale[xc - 2];
+	xc = s->mac.video_scale[xc - MAC_OVERLAP];
 	
-	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
+	for(x = s->mac.video_scale[x1 - MAC_OVERLAP]; x <= s->mac.video_scale[x2 + MAC_OVERLAP]; x++)
 	{
 		output[x * 2 + 1] = output[xc++ * 2];
 		if(xc > s->mac.video_scale[x2]) xc = s->mac.video_scale[x1];
 	}
 	
-	for(x = s->mac.video_scale[x1 - 2]; x <= s->mac.video_scale[x2 + 2]; x++)
+	for(x = s->mac.video_scale[x1 - MAC_OVERLAP]; x <= s->mac.video_scale[x2 + MAC_OVERLAP]; x++)
 	{
 		output[x * 2] = output[x * 2 + 1];
 	}
@@ -1620,7 +1833,11 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	
 	if(l->line == 1)
 	{
-		uint8_t pkt[MAC_PACKET_BYTES];
+		uint8_t pkt[MAC_PACKET_BYTES * 2];
+		
+		int golay;
+		
+		golay = l->frame & 1;
 		
 		/* Reset PRBS for packet scrambling */
 		_prbs1_reset(&s->mac, l->frame - 1);
@@ -1628,28 +1845,34 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 		/* Update the aspect ratio flag */
 		s->mac.ratio = (s->ratio <= (14.0 / 9.0) ? 0 : 1);
 		
-		/* Push the DG0 and DG3 SI packets every four frames.
-		 * DG0 is sent on both subframes for D-MAC. */
-		switch(l->frame & 3)
+		/* Push a service information packet at the start of each new
+		 * frame. Alternates between DG0 and DG3 each frame. DG0 is
+		 * added to both subframes for D-MAC */
+		switch(l->frame % 3)
 		{
 		case 0: /* Write DG0 to 1st and 2nd subframes */
 			
-			_create_si_dg0_packet(&s->mac, pkt);
+			x = _create_si_dg0_packet(&s->mac, pkt);
 			
-			mac_write_packet(s, 0, 0x000, 0, pkt, 0);
-			
-			if(s->conf.mac_mode == MAC_MODE_D)
-			{
-				mac_write_packet(s, 1, 0x000, 0, pkt, 0);
-			}
-			
+			_write_dg_packet(s, pkt, x, 0, golay);
 			break;
 		
 		case 1: /* Write DG3 to 1st subframe */
 			
-			_create_si_dg3_packet(&s->mac, pkt);
-			mac_write_packet(s, 0, 0x000, 0, pkt, 0);
+			x = _create_si_dg3_packet(&s->mac, pkt);
+
+			_write_dg_packet(s, pkt, x, 3, golay);
+			break;
 			
+		case 2: /* Write DG4 and DG9 to 1st subframe */
+			
+			x = _create_si_dg4_packet(&s->mac, pkt, golay);
+			
+			_write_dg_packet(s, pkt, x, 4, golay);
+
+			x = _create_si_dg9_packet(&s->mac, pkt);
+			
+			_write_dg_packet(s, pkt, x, 9, golay);
 			break;
 		}
 		
@@ -1689,7 +1912,7 @@ int mac_next_line(vid_t *s, void *arg, int nlines, vid_line_t **lines)
 	}
 	
 	/* Generate the teletext data, if enabled */
-	if(s->conf.teletext)
+	if(s->conf.teletext || s->conf.txsubtitles)
 	{
 		_vbi_teletext(s, data, l->frame, l->line);
 	}

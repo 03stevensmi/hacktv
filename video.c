@@ -14,7 +14,6 @@
 /*                                                                       */
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +22,7 @@
 #include "nicam728.h"
 #include "dance.h"
 #include "hacktv.h"
+#include <sys/time.h>
 
 /* 
  * Video generation
@@ -71,9 +71,10 @@ const vid_config_t vid_config_pal_i = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000025, /*  0.25 +0.05µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -129,9 +130,10 @@ const vid_config_t vid_config_pal_bg = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -168,7 +170,7 @@ const vid_config_t vid_config_pal_dk = {
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
 	.modulation     = VID_VSB,
-	.vsb_upper_bw   = 6000000, /* Hz */
+	.vsb_upper_bw   = 5500000, /* Hz */
 	.vsb_lower_bw   =  750000, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
@@ -187,9 +189,10 @@ const vid_config_t vid_config_pal_dk = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -215,7 +218,7 @@ const vid_config_t vid_config_pal_dk = {
 	.fm_mono_carrier   = 6500000, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
 	.fm_mono_preemph   = VID_50US,
-
+	
 	/* Chinese standard GY/T 129-1997, similar to French standard. */
 	.nicam_carrier  = 5850000, /* Hz */
 	.nicam_beta     = 0.4,
@@ -230,12 +233,12 @@ const vid_config_t vid_config_pal_fm = {
 	.fm_level       = 1.0,
 	.fm_deviation   = 16e6, /* 16 MHz/V */
 	
-	.level          = 1.0, /* Overall signal level */
+	.level          = 0.8, /* Overall signal level */
 	
 	.video_level    = 1.00, /* Power level of video */
-	.fm_mono_level  = 0.06, /* FM audio carrier power level */
-	//.fm_left_level  = 0.04, /* FM stereo left audio carrier power level */
-	//.fm_right_level = 0.04, /* FM stereo right audio carrier power level */
+	// .fm_mono_level  = 0.06, /* FM audio carrier power level */
+	.fm_left_level  = 0.04, /* FM stereo left audio carrier power level */
+	.fm_right_level = 0.04, /* FM stereo right audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -247,9 +250,10 @@ const vid_config_t vid_config_pal_fm = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
 	.white_level    =  0.50,
 	.black_level    = -0.20,
@@ -272,17 +276,17 @@ const vid_config_t vid_config_pal_fm = {
 	.qu_co          = 0.493,
 	.qv_co          = 0.000,
 	
-	.fm_mono_carrier   = 6500000, /* Hz */
-	.fm_mono_deviation = 85000, /* +/- Hz */
-	.fm_mono_preemph   = VID_50US, /* Seconds */
+	// .fm_mono_carrier   = 6500000, /* Hz */
+	// .fm_mono_deviation = 85000, /* +/- Hz */
+	// .fm_mono_preemph   = VID_50US, /* Seconds */
 	
-	//.fm_left_carrier   = 7020000, /* Hz */
-	//.fm_left_deviation = 50000, /* +/- Hz */
-	//.fm_left_preemph   = VID_75US, /* Seconds */
+	.fm_left_carrier   = 7020000, /* Hz */
+	.fm_left_deviation = 50000, /* +/- Hz */
+	.fm_left_preemph   = VID_50US, /* Seconds */
 	
-	//.fm_right_carrier   = 7200000, /* Hz */
-	//.fm_right_deviation = 50000, /* +/- Hz */
-	//.fm_right_preemph   = VID_75US, /* Seconds */
+	.fm_right_carrier   = 7200000, /* Hz */
+	.fm_right_deviation = 50000, /* +/- Hz */
+	.fm_right_preemph   = VID_50US, /* Seconds */
 };
 
 const vid_config_t vid_config_pal = {
@@ -305,14 +309,15 @@ const vid_config_t vid_config_pal = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3 ±0.10µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
-	.white_level    =  0.70,
-	.black_level    =  0.00,
-	.blanking_level =  0.00,
-	.sync_level     = -0.30,
+	.white_level = 1.00 * 0.85 * 2 - 1,
+	.black_level = 0.30 * 0.85 * 2 - 1,
+	.blanking_level = 0.30 * 0.85 * 2 - 1,
+	.sync_level = 0.00 * 0.85 * 2 - 1,
 	
 	.colour_mode    = VID_PAL,
 	.burst_width    = 0.00000225, /* 2.25 ±0.23µs */
@@ -355,9 +360,10 @@ const vid_config_t vid_config_pal_m = {
 	.active_width   = 0.00005280, /* 52.80µs */
 	.active_left    = 0.00000920, /* |-->| 9.2 +0.2 -0.1µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.10µs */
-	.vsync_short_width = 0.00000230, /* 2.30 ±0.10μs */
-	.vsync_long_width  = 0.00002710, /* 27.1μs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.10µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10μs */
+	.vsync_long_width  = 0.00002710, /* 27.10μs */
+	.sync_rise         = 0.00000020, /*  0.25µs */
 	
 	.white_level    = 0.2000,
 	.black_level    = 0.7280,
@@ -405,9 +411,10 @@ const vid_config_t vid_config_525pal = {
 	.active_width   = 0.00005280, /* 52.80µs */
 	.active_left    = 0.00000920, /* |-->| 9.2 +0.2 -0.1µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.10µs */
-	.vsync_short_width = 0.00000230, /* 2.3 ± 0.10μs */
-	.vsync_long_width  = 0.00002710, /* 27.1μs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.10µs */
+	.vsync_short_width = 0.00000230, /*  2.30 ±0.10μs */
+	.vsync_long_width  = 0.00002710, /* 27.10μs */
+	.sync_rise         = 0.00000020, /*  0.25µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.00,
@@ -442,7 +449,7 @@ const vid_config_t vid_config_secam_l = {
 	
 	.level          = 1.0, /* Overall signal level */
 	
-	.video_level    = 0.80, /* Power level of video */
+	.video_level    = 0.80 * (100.0 / 124.0), /* Power level of video (allowing for white + chrominance) */
 	.am_audio_level = 0.10, /* AM audio carrier power level */
 	.nicam_level    = 0.04, /* NICAM audio carrier power level */
 	
@@ -456,14 +463,15 @@ const vid_config_t vid_config_secam_l = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30µs */
+	.sync_rise         = 0.00000020, /*  0.20 ±0.10µs */
 	
 	.white_level    = 1.00,
 	.black_level    = 0.30,
 	.blanking_level = 0.30,
-	.sync_level     = 0.00,
+	.sync_level     = 0.05, /* leave a residual radiated carrier level of 5 ±2% */
 	
 	.colour_mode    = VID_SECAM,
 	.burst_width    = 0.00005690, /* 56.9μs */
@@ -490,13 +498,14 @@ const vid_config_t vid_config_secam_dk = {
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
 	.modulation     = VID_VSB,
-	.vsb_upper_bw   = 6000000, /* Hz */
+	.vsb_upper_bw   = 5500000, /* Hz */
 	.vsb_lower_bw   =  750000, /* Hz */
 	
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 0.70, /* Power level of video */
 	.fm_mono_level  = 0.20, /* FM audio carrier power level */
+	.nicam_level    = 0.07 / 2, /* NICAM audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -508,9 +517,10 @@ const vid_config_t vid_config_secam_dk = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 µs */
+	.sync_rise         = 0.00000020, /*  0.20 ±0.10µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -533,6 +543,9 @@ const vid_config_t vid_config_secam_dk = {
 	.fm_mono_carrier   = 6500000, /* Hz */
 	.fm_mono_deviation = 50000, /* +/- Hz */
 	.fm_mono_preemph   = VID_50US, /* Seconds */
+	
+	.nicam_carrier  = 5850000, /* Hz */
+	.nicam_beta     = 0.4,
 };
 
 const vid_config_t vid_config_secam_i = {
@@ -560,9 +573,10 @@ const vid_config_t vid_config_secam_i = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30 ±0.10µs */
+	.sync_rise         = 0.00000025, /*  0.25 +0.05µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -602,9 +616,9 @@ const vid_config_t vid_config_secam_fm = {
 	.level          = 1.0, /* Overall signal level */
 	
 	.video_level    = 1.00, /* Power level of video */
-	.fm_mono_level  = 0.05, /* FM audio carrier power level */
-	//.fm_left_level  = 0.025, /* FM stereo left audio carrier power level */
-	//.fm_right_level = 0.025, /* FM stereo right audio carrier power level */
+	// .fm_mono_level  = 0.05, /* FM audio carrier power level */
+	.fm_left_level  = 0.025, /* FM stereo left audio carrier power level */
+	.fm_right_level = 0.025, /* FM stereo right audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -616,9 +630,10 @@ const vid_config_t vid_config_secam_fm = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
 	.white_level    =  0.50,
 	.black_level    = -0.20,
@@ -638,17 +653,17 @@ const vid_config_t vid_config_secam_fm = {
 	.qu_co          =  1.505 * 230e3, /* D'B */
 	.qv_co          =  0.000,
 	
-	.fm_mono_carrier   = 6500000, /* Hz */
-	.fm_mono_deviation = 85000, /* +/- Hz */
-	.fm_mono_preemph   = VID_50US, /* Seconds */
+	// .fm_mono_carrier   = 6500000, /* Hz */
+	// .fm_mono_deviation = 85000, /* +/- Hz */
+	// .fm_mono_preemph   = VID_50US, /* Seconds */
 	
-	//.fm_left_carrier   = 7020000, /* Hz */
-	//.fm_left_deviation = 50000, /* +/- Hz */
-	//.fm_left_preemph   = VID_50US, /* Seconds */
+	.fm_left_carrier   = 7020000, /* Hz */
+	.fm_left_deviation = 50000, /* +/- Hz */
+	.fm_left_preemph   = VID_50US, /* Seconds */
 	
-	//.fm_right_carrier   = 7200000, /* Hz */
-	//.fm_right_deviation = 50000, /* +/- Hz */
-	//.fm_right_preemph   = VID_50US, /* Seconds */
+	.fm_right_carrier   = 7200000, /* Hz */
+	.fm_right_deviation = 50000, /* +/- Hz */
+	.fm_right_preemph   = VID_50US, /* Seconds */
 };
 
 const vid_config_t vid_config_secam = {
@@ -671,9 +686,10 @@ const vid_config_t vid_config_secam = {
 	.active_width   = 0.00005195, /* 51.95µs */
 	.active_left    = 0.00001040, /* |-->| 10.40µs */
 	
-	.hsync_width       = 0.00000470, /* 4.70 ±0.20µs */
-	.vsync_short_width = 0.00000235, /* 2.35 ±0.10µs */
-	.vsync_long_width  = 0.00002730, /* 27.3µs */
+	.hsync_width       = 0.00000470, /*  4.70 ±0.20µs */
+	.vsync_short_width = 0.00000235, /*  2.35 ±0.10µs */
+	.vsync_long_width  = 0.00002730, /* 27.30µs */
+	.sync_rise         = 0.00000020, /*  0.20 +0.10µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.00,
@@ -720,7 +736,8 @@ const vid_config_t vid_config_ntsc_m = {
 	
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
-	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.vsync_long_width  = 0.00002710, /* 27.10µs */
+	.sync_rise         = 0.00000025, /*  0.25µs */
 	
 	.white_level    = 0.125000,
 	.black_level    = 0.703125,
@@ -776,6 +793,7 @@ const vid_config_t vid_config_ntsc_i = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    = 0.200000,
 	.black_level    = 0.728571,
@@ -835,6 +853,7 @@ const vid_config_t vid_config_ntsc_fm = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    =  0.5000,
 	.black_level    = -0.1607,
@@ -897,6 +916,7 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25µs */
 	
 	.white_level    =  0.5000,
 	.black_level    = -0.2143,
@@ -946,6 +966,7 @@ const vid_config_t vid_config_ntsc = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    =  100.0 / 140,
 	.black_level    =    7.5 / 140,
@@ -974,7 +995,9 @@ const vid_config_t vid_config_d2mac_am = {
 	/* D2-MAC AM */
 	.output_type    = HACKTV_INT16_COMPLEX,
 	
-	.modulation     = VID_AM,
+	.modulation     = VID_VSB,
+	.vsb_upper_bw   = 8400000, /* Hz */
+	.vsb_lower_bw   = 0, /* Hz */
 	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
@@ -1066,8 +1089,8 @@ const vid_config_t vid_config_d2mac = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
-	.white_level    =  0.50,
-	.black_level    = -0.50,
+	.white_level    =  1.00,
+	.black_level    = -1.00,
 	.blanking_level =  0.00,
 	.sync_level     =  0.00,
 	
@@ -1179,8 +1202,8 @@ const vid_config_t vid_config_dmac = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.0, /* Power level of video */
 	
-	.white_level    =  0.50,
-	.black_level    = -0.50,
+	.white_level    =  1.00,
+	.black_level    = -1.00,
 	.blanking_level =  0.00,
 	.sync_level     =  0.00,
 	
@@ -1291,8 +1314,9 @@ const vid_config_t vid_config_405_a = {
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
 	
-	.hsync_width       = 0.00000900, /* 9.00 ±1.00µs */
-	.vsync_long_width  = 0.00004000, /* 40.0 ±2.00µs */
+	.hsync_width       = 0.00000900, /*  9.00 ±1.00 µs */
+	.vsync_long_width  = 0.00004000, /* 40.00 ±2.00 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    = 1.00,
 	.black_level    = 0.30,
@@ -1332,8 +1356,9 @@ const vid_config_t vid_config_405_i = {
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
 	
-	.hsync_width       = 0.00000900, /* 9.00 ±1.00µs */
-	.vsync_long_width  = 0.00004000, /* 40.0 ±2.00µs */
+	.hsync_width       = 0.00000900, /*  9.00 ±1.00 µs */
+	.vsync_long_width  = 0.00004000, /* 40.00 ±2.00 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    = 0.20,
 	.black_level    = 0.76,
@@ -1369,8 +1394,9 @@ const vid_config_t vid_config_405 = {
 	.active_width   = 0.00008030, /* 80.3µs */
 	.active_left    = 0.00001680, /* |-->| 16.8µs */
 	
-	.hsync_width       = 0.00000900, /* 9.00 ±1.00µs */
-	.vsync_long_width  = 0.00004000, /* 40.0 ±2.00µs */
+	.hsync_width       = 0.00000900, /*  9.00 ±1.00µs */
+	.vsync_long_width  = 0.00004000, /* 40.00 ±2.00µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.00,
@@ -1586,6 +1612,7 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    =  0.5000,
 	.black_level    = -0.1475,
@@ -1632,6 +1659,7 @@ const vid_config_t vid_config_apollo_colour = {
 	.hsync_width       = 0.00000470, /*  4.70 ±1.00µs */
 	.vsync_short_width = 0.00000230, /*  2.30 ±0.10µs */
 	.vsync_long_width  = 0.00002710, /* 27.10 µs */
+	.sync_rise         = 0.00000025, /*  0.25 µs */
 	
 	.white_level    =  0.70,
 	.black_level    =  0.0525,
@@ -2879,7 +2907,10 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	{
 		for(x = s->burst_left; x < s->burst_left + s->burst_width; x++)
 		{
-			l->output[x * 2] += (l->lut_b[x] * s->burst_win[x - s->burst_left]) >> 15;
+			/* Nasty hack for Videocrypt-S */
+			int y = s->conf.videocrypts ? x + 2 : x;
+			l->output[x * 2] += (lut_b[y] * s->burst_win[y - s->burst_left]) >> 15;
+			//l->output[x * 2] += (l->lut_b[x] * s->burst_win[x - s->burst_left]) >> 15;
 		}
 	}
 	
@@ -3754,8 +3785,8 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		_add_lineprocess(s, "videocrypts", VCS_DELAY_LINES, &s->vcs, vcs_render_line, NULL);
 	}
 	
-	/* Initialise syster encoder */
-	if(s->conf.syster)
+	/* Initalise syster encoder */
+	if(s->conf.syster || s->conf.systercnr)
 	{
 		if((r = ng_init(&s->ng, s)) != VID_OK)
 		{
@@ -3764,6 +3795,18 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		}
 		
 		_add_lineprocess(s, "syster", NG_DELAY_LINES, &s->ng, ng_render_line, NULL);
+	}
+
+	/* Initalise D11 encoder */
+	if(s->conf.d11)
+	{
+		if((r = d11_init(&s->ng, s, s->conf.d11)) != VID_OK)
+		{
+			vid_free(s);
+			return(r);
+		}
+		
+		_add_lineprocess(s, "discret11", 2, &s->ng, d11_render_line, NULL);
 	}
 	
 	/* Initialise ACP renderer */
@@ -3790,10 +3833,10 @@ int vid_init(vid_t *s, unsigned int sample_rate, unsigned int pixel_rate, const 
 		_add_lineprocess(s, "vitc", 1, &s->vitc, vitc_render, NULL);
 	}
 	
-	/* Initialise the teletext system */
-	if(s->conf.teletext)
+	/* Initalise the teletext system */
+	if(s->conf.teletext || s->conf.txsubtitles)
 	{
-		if((r = tt_init(&s->tt, s, s->conf.teletext)) != VID_OK)
+		if((r = tt_init(&s->tt, s, s->conf.teletext ? s->conf.teletext : "subtitles")) != VID_OK)
 		{
 			vid_free(s);
 			return(r);
@@ -4170,7 +4213,7 @@ void vid_free(vid_t *s)
 		acp_free(&s->acp);
 	}
 	
-	if(s->conf.syster)
+	if(s->conf.syster || s->conf.d11 || s->conf.systercnr)
 	{
 		ng_free(&s->ng);
 	}
@@ -4263,7 +4306,6 @@ static vid_line_t *_vid_next_line(vid_t *s, size_t *samples)
 		{
 			return(NULL);
 		}
-		
 		s->framebuffer = _av_read_video(s, &s->ratio);
 	}
 	

@@ -14,7 +14,6 @@
 /*                                                                       */
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
-
 #ifndef _HACKTV_H
 #define _HACKTV_H
 
@@ -65,18 +64,27 @@ typedef struct {
 	int interlace;
 	int repeat;
 	int verbose;
+	char *d11;
+	char *systercnr;
 	char *teletext;
+	char *logo;
 	char *wss;
+	int letterbox;
+	int pillarbox;
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;
-	int syster;
+	int findkey;
+	int showserial;
+	char *syster;
 	int systeraudio;
 	char *eurocrypt;
 	int acp;
 	int vits;
 	int vitc;
 	int filter;
+	int subtitles;
+	int txsubtitles;
 	int nocolour;
 	int noaudio;
 	int nonicam;
@@ -88,6 +96,11 @@ typedef struct {
 	int gain;
 	char *antenna;
 	int file_type;
+	int timestamp;
+	int position;
+	uint32_t enableemm;
+	uint32_t disableemm;
+	int showecm;
 	int chid;
 	int mac_audio_stereo;
 	int mac_audio_quality;
@@ -95,6 +108,12 @@ typedef struct {
 	int mac_audio_companded;
 	int64_t offset;
 	char *passthru;
+	float volume;
+	int downmix;
+	int fmaudiotest;
+	int ec_mat_rating;
+	char *ec_ppv;
+	int nodate;
 	int invert_video;
 	int secam_field_id;
 	char *ffmt;

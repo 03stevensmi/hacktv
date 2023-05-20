@@ -19,9 +19,17 @@
 #define _VIDEO_H
 
 #include <stdint.h>
+#include <time.h>
+
 #include "nicam728.h"
 #include "dance.h"
 #include "fir.h"
+
+#ifdef WIN32
+#define OS_SEP '\\'
+#else
+#define OS_SEP '/'
+#endif
 
 typedef struct vid_line_t vid_line_t;
 typedef struct vid_t vid_t;
@@ -33,7 +41,10 @@ typedef struct vid_t vid_t;
 #include "videocrypts.h"
 #include "syster.h"
 #include "acp.h"
+#include "font.h"
+#include "subtitles.h"
 #include "vits.h"
+#include "graphics.h"
 #include "vitc.h"
 
 /* Return codes */
@@ -161,6 +172,7 @@ typedef struct {
 	double hsync_width;
 	double vsync_short_width;
 	double vsync_long_width;
+	double sync_rise; /* The 10% - 90% rise time */
 	
 	int invert_video;
 	double white_level;
@@ -174,18 +186,38 @@ typedef struct {
 	double gamma;
 	
 	char *teletext;
+	char *logo;
+	time_t timestamp;
+	int position;
+	char *mode;
 	
 	char *wss;
+	int letterbox;
+	int pillarbox;
+	float volume;
+	int downmix;
 	
 	char *videocrypt;
 	char *videocrypt2;
 	char *videocrypts;
-	int syster;
+	uint32_t enableemm;
+	uint32_t disableemm;
+	int showecm;
+	int showserial;
+	int findkey;
+	char *d11;
+	char *systercnr;
+	char *syster;
 	int systeraudio;
 	int acp;
+	int subtitles;
+	int txsubtitles;
 	int vits;
 	int vitc;
 	char *eurocrypt;
+	int ec_mat_rating;
+	char *ec_ppv;
+	int nodate;
 	
 	/* RGB weights, should add up to 1.0 */
 	double rw_co;
@@ -317,6 +349,8 @@ struct vid_t {
 	
 	/* Source interface */
 	void *av_private;
+	void *av_font;
+	void *av_sub;
 	vid_read_video_t av_read_video;
 	vid_read_audio_t av_read_audio;
 	vid_eof_t av_eof;
@@ -325,6 +359,12 @@ struct vid_t {
 	/* Signal configuration */
 	vid_config_t conf;
 	int sample_rate;
+	
+	/* Logo configuration */
+	image_t vid_logo;
+
+	/* Media icons */
+	image_t media_icons[4];
 	
 	/* Video setup */
 	int pixel_rate;
@@ -373,7 +413,7 @@ struct vid_t {
 	int bline;
 	
 	/* The frame and line number returned by vid_next_line() */
-	int frame;
+	uint32_t frame;
 	int line;
 	
 	/* Current frame's aspect ratio */

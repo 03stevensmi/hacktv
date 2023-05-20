@@ -14,9 +14,10 @@
 /*                                                                       */
 /* You should have received a copy of the GNU General Public License     */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
-
+#define _GNU_SOURCE 1
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <getopt.h>
 #include <signal.h>
@@ -25,6 +26,12 @@
 #include "ffmpeg.h"
 #include "file.h"
 #include "hackrf.h"
+
+#ifdef WIN32
+#define OS_SEP '\\'
+#else
+#define OS_SEP '/'
+#endif
 
 #ifdef HAVE_SOAPYSDR
 #include "soapysdr.h"
@@ -72,21 +79,32 @@ static void print_usage(void)
 		"\n"
 		"  -o, --output <target>          Set the output device or file, Default: hackrf\n"
 		"  -m, --mode <name>              Set the television mode. Default: i\n"
-		"  -s, --samplerate <value>       Set the sample rate in Hz. Default: 16MHz\n"
+		"  -s, --samplerate <value>       Set the sample rate in Hz. Default: 20.25MHz\n"
 		"      --pixelrate <value>        Set the video pixel rate in Hz. Default: Sample rate\n"
 		"  -l, --level <value>            Set the output level. Default: 1.0\n"
 		"  -D, --deviation <value>        Override the mode's FM peak deviation. (Hz)\n"
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -i, --interlace                Update image each field instead of each frame.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
+		"  -p, --position <value>         Set start position of video in minutes.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
+		"      --logo <path>              Overlay picture logo over video.\n"
+		"      --timestamp                Overlay video timestamp over video.\n"
 		"      --teletext <path>          Enable teletext output. (625 line modes only)\n"
-		"      --wss <mode>               Enable WSS output. (625 line modes only)\n"
+		"      --wss <mode>               Set WSS output. Defaults to auto. (625 line modes only)\n"
+		"      --letterbox                Letterboxes widescreen content on 4:3 screen.\n"
+		"      --pillarbox                Zooms widescreen content to fill 4:3 screen.\n"
 		"      --videocrypt <mode>        Enable Videocrypt I scrambling. (PAL only)\n"
+		"      --enableemm <serial>       Enable Sky 07 or 09 cards. Use first 8 digital of serial number.\n"
+		"      --disableemm <serial>      Disable Sky 07 or 09 cards. Use first 8 digital of serial number.\n"
 		"      --videocrypt2 <mode>       Enable Videocrypt II scrambling. (PAL only)\n"
 		"      --videocrypts <mode>       Enable Videocrypt S scrambling. (PAL only)\n"
-		"      --syster                   Enable Nagravision Syster scambling. (PAL only)\n"
-		"      --systeraudio              Invert the audio spectrum when using Syster.\n"
+		"      --showserial               Displays serial number of the Videocrypt card.\n"
+		"      --findkey                  Attempt to find keys of PPV Videocrypt card.\n"
+		"      --syster <mode>            Enable Nagravision Syster scrambling. (PAL only)\n"
+		"      --d11 <mode>               Enable Discret 11 scrambling. (PAL only)\n"
+		"      --systercnr <mode>         Enable Syster cut and rotate scrambling (***INCOMPLETE***). (PAL only)\n"
+		"      --systeraudio              Invert the audio spectrum when using Syster, Syster CnR or D11 scrambling.\n"
 		"      --acp                      Enable Analogue Copy Protection signal.\n"
 		"      --vits                     Enable VITS test signals.\n"
 		"      --vitc                     Enable VITC time code.\n"
@@ -98,8 +116,17 @@ static void print_usage(void)
 		"      --single-cut               Enable D/D2-MAC single cut video scrambling.\n"
 		"      --double-cut               Enable D/D2-MAC double cut video scrambling.\n"
 		"      --eurocrypt <mode>         Enable Eurocrypt conditional access for D/D2-MAC.\n"
+		"      --ec-mat-rating <rating>   Enable Eurocrypt maturity rating.\n"
+		"      --ec-ppv <pnum,cost>       Enable Eurocrypt PPV.\n"
 		"      --scramble-audio           Scramble audio data when using D/D2-MAC modes.\n"
 		"      --chid <id>                Set the channel ID (D/D2-MAC).\n"
+		"      --key-table-1              Set permutation key table 1 in Syster.\n"
+		"      --key-table-2              Set permutation key table 2 in Syster.\n"
+		"      --subtitles <stream idx>   Enable subtitles. Takes an optional argument.\n"
+		"      --tx-subtitles <stream id> Enable subtitles on teletext page 888.\n"
+		"      --downmix                  Downmix 5.1 audio to 2.0.\n"
+		"      --volume <value>           Adjust volume. Takes floats as argument.\n"
+		"      --showecm                  Show input and output control wordsfor scrambled modes.\n"
 		"      --mac-audio-stereo         Use stereo audio (D/D2-MAC). (Default)\n"
 		"      --mac-audio-mono           Use mono audio (D/D2-MAC).\n"
 		"      --mac-audio-high-quality   Use high quality 32 kHz audio (D/D2-MAC).\n"
@@ -120,6 +147,9 @@ static void print_usage(void)
 		"Input options\n"
 		"\n"
 		"  test:colourbars    Generate and transmit a test pattern.\n"
+		"  test:pm5544        Transmit a PM5544 test pattern.\n"
+		"  test:ueitm         Transmit a UEITM test pattern.\n"
+		"  test:fubk          Transmit a FUBK test pattern.\n"
 		"  ffmpeg:<file|url>  Decode and transmit a video file with ffmpeg.\n"
 		"\n"
 		"  If no valid input prefix is provided, ffmpeg: is assumed.\n"
@@ -270,11 +300,27 @@ static void print_usage(void)
 		"\n"
 		"hacktv supports the following modes:\n"
 		"\n"
-		"  free        = Free-access, no subscription card is required to decode.\n"
-		"  conditional = A valid Sky card is required to decode. Sample data from MTV.\n"
+		"  free            = Free-access, no subscription card is required to decode.\n"
+		"  sky07           = A valid Sky series 07 or 06 card is required to decode. Random control words.\n"
+		"  sky09           = A valid Sky series 09 card is required to decode. Random control words.\n"
+		"  sky09nano       = A valid Sky series 09 card with nanos enabled is required to decode. Random control words.\n"
+		"  sky10           = A valid Sky series 10 card is required to decode. Sample data from Sky One.\n"
+		"  sky10ppv        = A valid Sky series 10 card with PPV enabled is required to decode.\n"
+		"                    Sample data from Tyson fight in 1996.\n"
+		"  sky11           = A valid Sky series 11 card is required to decode. Sample data from MTV.\n"
+		"  sky12           = A valid Sky series 12 card is required to decode. Sample data from Sky One.\n"
+		"  tac             = A valid  TAC card is required to decode. Random control words.\n"
+		"  xtea            = Uses xtea encryption for control words. Needs Funcard programmed with\n"
+		"                    supplied hex files. Random control words.\n"
+		"  ppv             = Memory cards, such as old phone cards, may work in this mode.\n"
 		"\n"
 		"Videocrypt is only compatible with 625 line PAL modes. This version\n"
 		"works best when used with samples rates at multiples of 14MHz.\n"
+		"\n"
+		"Enable/Disable EMM\n"
+		"\n"
+		"This option attempts to switch on or off your Sky card. Parameter is first 8 digits of your card number.\n"
+		"Currently only supports Sky 07 cards.\n"
 		"\n"
 		"Videocrypt II\n"
 		"\n"
@@ -283,9 +329,8 @@ static void print_usage(void)
 		"\n"
 		"hacktv supports the following modes:\n"
 		"\n"
-		"  free        = Free-access, no subscription card is required to decode.\n"
-		"\n"
-		"Both VC1 and VC2 cannot be used together except if both are in free-access mode.\n"
+		"  free            = Free-access, no subscription card is required to decode.\n"
+		"  conditional     = A valid Multichoice card is required to decode. Random control words.\n"
 		"\n"
 		"Videocrypt S\n"
 		"\n"
@@ -304,8 +349,26 @@ static void print_usage(void)
 		"Another video scrambling system used in the 1990s in Europe. The video lines\n"
 		"are vertically shuffled within a field.\n"
 		"\n"
-		"Syster is only compatible with 625 line PAL modes and does not currently work\n"
-		"with most hardware.\n"
+		"hacktv supports the following modes (number in brackets indicates the permutation table):\n"
+		"\n"
+		"  premiere-fa     = (1) A valid Premiere 'key' is required to decode - free access.\n"
+		"  premiere-ca     = (1) A valid Premiere 'key' is required to decode - subscription level access.\n"
+		"  cfrfa           = (2) A valid Canal+ France 'key' is required to decode - free access. \n"
+		"  cfrca           = (2) A valid Canal+ France 'key' is required to decode - subscription level access.\n"
+		"  cplfa           = (1) A valid Canal+ Poland 'key' is required to decode - free access.\n"
+		"  cesfa           = (1) A valid Canal+ Spain 'key' is required to decode - free access.\n"
+		"  chorfa          = (2) A valid Canal+ Horizons 'key' is required to decode - free access.\n"
+		"  ntvfa           = (2) A valid HTB+ Russia 'key' is required to decode - free access.\n"
+		"\n"
+		"By default, PAL providers use permutation table 1 and SECAM ones use table 2.\n"
+		"\n"
+		"Discret 11\n"
+		"\n"
+		"This scrambling system is a precursor to Syster in 1980s and mid-1990s. Uses one of three \n"
+		"line delays to create a jagged effect. This will work with Syster decoders and dedicated Discret ones.\n"
+		"Syster decoder will require one of valid keys used in Syster (above).\n"
+		"\n"
+		"Discret parameter requires one of the above modes specified.\n"
 		"\n"
 		"Some decoders will invert the audio around 12.8 kHz. For these devices you need\n"
 		"to use the --systeraudio option.\n"
@@ -325,6 +388,11 @@ static void print_usage(void)
 		"  tvs         = (S) A valid TVS (Denmark) card is required to decode.\n"
 		"  rdv         = (S) A valid RDV card is required to decode.\n"
 		"  nrk         = (S) A valid NRK card is required to decode.\n"
+		"  cplus       = (3DES) A valid Canal+ Nordic card is required to decode.\n"
+		"  tv3update   = (M) Autoupdate mode with included PIC/EEPROM files.\n"
+		"  cplusfr43   = (M) Autoupdating mode for Canal+ France cards.\n"
+		"  cplusfr169  = (M) Autoupdating mode for Canal+ France cards.\n"
+		"  cinecfr     = (M) Autoupdating mode for Canal+ France cards.\n"
 		"\n"
 		"MultiMac style cards can also be used.\n"
 		"\n"
@@ -352,6 +420,27 @@ enum {
 	_OPT_DOUBLE_CUT,
 	_OPT_SCRAMBLE_AUDIO,
 	_OPT_CHID,
+	_OPT_LOGO,
+	_OPT_TIMECODE,
+	_OPT_DISCRET,
+	_OPT_ENABLE_EMM,
+	_OPT_DISABLE_EMM,
+	_OPT_SHOW_ECM,
+	_OPT_SUBTITLES,
+	_OPT_TX_SUBTITLES,
+	_OPT_NODATE,
+	_OPT_SMARTCRYPT,
+	_OPT_EC_MAT_RATING,
+	_OPT_EC_PPV,
+	_OPT_LETTERBOX,
+	_OPT_PILLARBOX,
+	_OPT_SHOWSERIAL,
+	_OPT_FINDKEY,
+	_OPT_SYSTER_KT1,
+	_OPT_SYSTER_KT2,
+	_OPT_DOWNMIX,
+	_OPT_VOLUME,
+	_OPT_FMAUDIOTEST,
 	_OPT_MAC_AUDIO_STEREO,
 	_OPT_MAC_AUDIO_MONO,
 	_OPT_MAC_AUDIO_HIGH_QUALITY,
@@ -386,15 +475,30 @@ int main(int argc, char *argv[])
 		{ "verbose",        no_argument,       0, 'v' },
 		{ "teletext",       required_argument, 0, _OPT_TELETEXT },
 		{ "wss",            required_argument, 0, _OPT_WSS },
+		{ "letterbox",      no_argument,       0, _OPT_LETTERBOX },
+		{ "pillarbox",      no_argument,       0, _OPT_PILLARBOX },
 		{ "videocrypt",     required_argument, 0, _OPT_VIDEOCRYPT },
 		{ "videocrypt2",    required_argument, 0, _OPT_VIDEOCRYPT2 },
 		{ "videocrypts",    required_argument, 0, _OPT_VIDEOCRYPTS },
-		{ "syster",         no_argument,       0, _OPT_SYSTER },
+		{ "showserial",     no_argument,       0, _OPT_SHOWSERIAL },
+		{ "findkey",        no_argument,       0, _OPT_FINDKEY },
+		{ "single-cut",     no_argument,       0, _OPT_SINGLE_CUT },
+		{ "double-cut",     no_argument,       0, _OPT_DOUBLE_CUT },
+		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
+		{ "scramble-audio", no_argument,       0, _OPT_SCRAMBLE_AUDIO },
+		{ "syster",         required_argument, 0, _OPT_SYSTER },
+		{ "key-table-1",    no_argument,       0, _OPT_SYSTER_KT1 },
+		{ "key-table-2",    no_argument,       0, _OPT_SYSTER_KT2 },
+		{ "d11",            required_argument, 0, _OPT_DISCRET },
+		{ "systercnr",      required_argument, 0, _OPT_SMARTCRYPT },
 		{ "systeraudio",    no_argument,       0, _OPT_SYSTERAUDIO },
 		{ "acp",            no_argument,       0, _OPT_ACP },
 		{ "vits",           no_argument,       0, _OPT_VITS },
 		{ "vitc",           no_argument,       0, _OPT_VITC },
 		{ "filter",         no_argument,       0, _OPT_FILTER },
+		{ "subtitles",      optional_argument, 0, _OPT_SUBTITLES },
+		{ "tx-subtitles",   optional_argument, 0, _OPT_TX_SUBTITLES },
+		{ "nodate",         no_argument,       0, _OPT_NODATE },
 		{ "nocolour",       no_argument,       0, _OPT_NOCOLOUR },
 		{ "nocolor",        no_argument,       0, _OPT_NOCOLOUR },
 		{ "noaudio",        no_argument,       0, _OPT_NOAUDIO },
@@ -403,6 +507,8 @@ int main(int argc, char *argv[])
 		{ "single-cut",     no_argument,       0, _OPT_SINGLE_CUT },
 		{ "double-cut",     no_argument,       0, _OPT_DOUBLE_CUT },
 		{ "eurocrypt",      required_argument, 0, _OPT_EUROCRYPT },
+		{ "ec-mat-rating",  required_argument, 0, _OPT_EC_MAT_RATING },
+		{ "ec-ppv",         optional_argument, 0, _OPT_EC_PPV },
 		{ "scramble-audio", no_argument,       0, _OPT_SCRAMBLE_AUDIO },
 		{ "chid",           required_argument, 0, _OPT_CHID },
 		{ "mac-audio-stereo", no_argument,     0, _OPT_MAC_AUDIO_STEREO },
@@ -424,6 +530,14 @@ int main(int argc, char *argv[])
 		{ "gain",           required_argument, 0, 'g' },
 		{ "antenna",        required_argument, 0, 'A' },
 		{ "type",           required_argument, 0, 't' },
+		{ "logo",           required_argument, 0, _OPT_LOGO },
+		{ "timestamp",      no_argument,       0, _OPT_TIMECODE },
+		{ "position",       required_argument, 0, 'p' },
+		{ "enableemm",      required_argument, 0, _OPT_ENABLE_EMM },
+		{ "disableemm",     required_argument, 0, _OPT_DISABLE_EMM },
+		{ "showecm",        no_argument,       0, _OPT_SHOW_ECM },
+		{ "downmix",        no_argument,       0, _OPT_DOWNMIX },
+		{ "volume",         required_argument, 0, _OPT_VOLUME },
 		{ 0,                0,                 0,  0  }
 	};
 	static hacktv_t s;
@@ -446,7 +560,7 @@ int main(int argc, char *argv[])
 	s.output_type = "hackrf";
 	s.output = NULL;
 	s.mode = "i";
-	s.samplerate = 16000000;
+	s.samplerate = 20250000;
 	s.pixelrate = 0;
 	s.level = 1.0;
 	s.deviation = -1;
@@ -455,11 +569,19 @@ int main(int argc, char *argv[])
 	s.repeat = 0;
 	s.verbose = 0;
 	s.teletext = NULL;
+	s.position = 0;
 	s.wss = NULL;
+	s.letterbox = 0;
+	s.pillarbox = 0;
 	s.videocrypt = NULL;
 	s.videocrypt2 = NULL;
 	s.videocrypts = NULL;
-	s.syster = 0;
+	s.showserial = 0;
+	s.findkey = 0;
+	s.eurocrypt = NULL;
+	s.syster = NULL;
+	s.d11 = NULL;
+	s.systercnr = NULL;
 	s.systeraudio = 0;
 	s.acp = 0;
 	s.vits = 0;
@@ -481,9 +603,20 @@ int main(int argc, char *argv[])
 	s.gain = 0;
 	s.antenna = NULL;
 	s.file_type = HACKTV_INT16;
+	s.logo = NULL;
+	s.timestamp = 0;
+	s.enableemm = 0;
+	s.disableemm = 0;
+	s.showecm = 0;
+	s.subtitles = 0;
+	s.txsubtitles = 0;
+	s.volume = 1;
+	s.downmix = 0;
+	s.ec_ppv = NULL;
+	s.nodate = 0;
 	
 	opterr = 0;
-	while((c = getopt_long(argc, argv, "o:m:s:D:G:irvf:al:g:A:t:", long_options, &option_index)) != -1)
+	while((c = getopt_long(argc, argv, "o:m:s:D:G:irvf:al:g:A:t:p:", long_options, &option_index)) != -1)
 	{
 		switch(c)
 		{
@@ -590,11 +723,19 @@ int main(int argc, char *argv[])
 		case _OPT_WSS: /* --wss <mode> */
 			s.wss = optarg;
 			break;
+			
+		case _OPT_LETTERBOX: /* --letterbox */
+			s.letterbox = 1;
+			break;
+			
+		case _OPT_PILLARBOX: /* --pillarbox */
+			s.pillarbox = 1;
+			break;
 		
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
 			s.videocrypt = optarg;
 			break;
-		
+
 		case _OPT_VIDEOCRYPT2: /* --videocrypt2 */
 			s.videocrypt2 = optarg;
 			break;
@@ -603,14 +744,61 @@ int main(int argc, char *argv[])
 			s.videocrypts = optarg;
 			break;
 		
-		case _OPT_SYSTER: /* --syster */
-			s.syster = 1;
+		case _OPT_ENABLE_EMM: /* --enable-emm <card_serial> */
+			s.enableemm = (uint32_t) strtod(optarg, NULL);
+			break;
+
+		case _OPT_DISABLE_EMM: /* --disable-emm <card_serial> */
+			s.disableemm = (uint32_t) strtod(optarg, NULL);
 			break;
 		
+		case _OPT_FINDKEY: /* --findkey */
+			s.findkey = 1;
+			break;
+			
+		case _OPT_SHOWSERIAL: /* --showserial */
+			s.showserial = 1;
+			break;
+			
+		case _OPT_SHOW_ECM: /* --showecm */
+			s.showecm = 1;
+			break;
+		
+		case _OPT_SYSTER: /* --syster */
+			free(s.syster);
+			s.syster = strdup(optarg);
+			break;
+			
+		case _OPT_SYSTER_KT1: /* --key-table-1 */
+			s.scramble_video = 1;
+			break;
+		
+		case _OPT_SYSTER_KT2: /* --key-table-2 */
+			s.scramble_video = 2;
+			break;
+			
+		case _OPT_DISCRET: /* --d11 */
+			free(s.d11);
+			s.d11 = strdup(optarg);
+			break;
+		
+		case _OPT_SMARTCRYPT: /* --systercnr */
+			free(s.systercnr);
+			s.systercnr = strdup(optarg);
+			break;
+			
 		case _OPT_SYSTERAUDIO: /* --systeraudio */
 			s.systeraudio = 1;
 			break;
-		
+			
+		case _OPT_VOLUME: /* --volume */
+			s.volume = atof(optarg);
+			break;
+			
+		case _OPT_DOWNMIX: /* --downmix */
+			s.downmix = 1;
+			break;
+			
 		case _OPT_ACP: /* --acp */
 			s.acp = 1;
 			break;
@@ -626,7 +814,40 @@ int main(int argc, char *argv[])
 		case _OPT_FILTER: /* --filter */
 			s.filter = 1;
 			break;
+			
+		case _OPT_SUBTITLES: /* --subtitles */
+			s.subtitles = 1;
+			if(!optarg && NULL != argv[optind] && '-' != argv[optind][0])
+			{
+				s.subtitles = atof(argv[optind++]);
+			}
+			break;
+			
+		case _OPT_TX_SUBTITLES: /* --tx-subtitles */
+			s.txsubtitles = 1;
+			if(!optarg && NULL != argv[optind] && '-' != argv[optind][0])
+			{
+				s.txsubtitles = atof(argv[optind++]);
+			}
+			break;
 		
+		case _OPT_NODATE: /* --nodate */
+			s.nodate = 1;
+			break;
+			
+		case _OPT_LOGO: /* --logo <path> */
+			free(s.logo);
+			s.logo = strdup(optarg);
+			break;
+			
+		case _OPT_TIMECODE: /* --timestamp */
+			s.timestamp = 1;
+			break;
+			
+		case 'p': /* -p, --position <value> */
+			s.position = atof(optarg);
+			break;
+			
 		case _OPT_NOCOLOUR: /* --nocolour / --nocolor */
 			s.nocolour = 1;
 			break;
@@ -655,6 +876,18 @@ int main(int argc, char *argv[])
 			s.eurocrypt = optarg;
 			break;
 		
+		case _OPT_EC_MAT_RATING: /* --ec-mat-rating */
+			s.ec_mat_rating = atoi(optarg);
+			break;
+		
+		case _OPT_EC_PPV: /* --ec-ppv */
+			s.ec_ppv = "0,0";
+			if(!optarg && NULL != argv[optind] && '-' != argv[optind][0])
+			{
+				s.ec_ppv = argv[optind++];
+			}
+			break;
+			
 		case _OPT_SCRAMBLE_AUDIO: /* --scramble-audio */
 			s.scramble_audio = 1;
 			break;
@@ -863,6 +1096,7 @@ int main(int argc, char *argv[])
 	vid_conf.scramble_audio = s.scramble_audio;
 	
 	vid_conf.level *= s.level;
+	vid_conf.mode = s.mode;
 	
 	if(s.teletext)
 	{
@@ -875,6 +1109,21 @@ int main(int argc, char *argv[])
 		vid_conf.teletext = s.teletext;
 	}
 	
+	if(s.logo)
+	{
+		asprintf(&vid_conf.logo, "%s", s.logo);
+	}
+	
+	if(s.position)
+	{
+		vid_conf.position = s.position;
+	}
+
+	if(s.timestamp)
+	{
+		vid_conf.timestamp = time(0);
+	}
+	
 	if(s.wss)
 	{
 		if(vid_conf.lines != 625)
@@ -884,6 +1133,22 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.wss = s.wss;
+	}
+	
+	if(s.letterbox)
+	{
+		vid_conf.letterbox = s.letterbox;
+	}
+	
+	if(s.pillarbox)
+	{
+		if(s.letterbox)
+		{
+			fprintf(stderr, "Pillarbox mode cannot be used together with letterbox mode.\n");
+			return(-1);
+		}
+		
+		vid_conf.pillarbox = s.pillarbox;
 	}
 	
 	if(s.videocrypt)
@@ -905,10 +1170,9 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		
-		/* Only allow both VC1 and VC2 if both are in free-access mode */
-		if(s.videocrypt && !(strcmp(s.videocrypt, "free") == 0 && strcmp(s.videocrypt2, "free") == 0))
+		if(s.videocrypt && (strcmp(s.videocrypt, "conditional") == 0 && strcmp(s.videocrypt2, "free") == 0))
 		{
-			fprintf(stderr, "Videocrypt I and II cannot be used together except in free-access mode.\n");
+			fprintf(stderr, "Videocrypt II in free mode only work with Videocrypt I in free mode.\n");
 			return(-1);
 		}
 		
@@ -932,11 +1196,98 @@ int main(int argc, char *argv[])
 		vid_conf.videocrypts = s.videocrypts;
 	}
 	
-	if(s.syster)
+	if(s.showserial)
 	{
-		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		if(!s.videocrypt)
 		{
-			fprintf(stderr, "Nagravision Syster is only compatible with 625 line PAL modes.\n");
+			fprintf(stderr, "'--showserial' is only supported in Videocrypt mode.\n");
+			return(-1);
+		}
+		
+		vid_conf.showserial = s.showserial;
+	}
+	
+	if(s.findkey)
+	{
+		if(!s.videocrypt || (s.videocrypt && !(strcmp(s.videocrypt, "ppv") == 0)))
+		{
+			fprintf(stderr, "'--findkey' is only supported in Videocrypt PPV mode.\n");
+			return(-1);
+		}
+		
+		vid_conf.findkey = s.findkey;
+	}
+	
+	if(s.eurocrypt)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_MAC)
+		{
+			fprintf(stderr, "Eurocrypt is only compatible with MAC modes.\n");
+			return(-1);
+		}
+		vid_conf.eurocrypt = s.eurocrypt;
+	}
+	
+	if(s.ec_mat_rating)
+	{
+		if(!s.eurocrypt)
+		{
+			fprintf(stderr, "Maturing rating option is only used in conjunction with Eurocrypt.\n");
+			return(-1);
+		}
+		vid_conf.ec_mat_rating = s.ec_mat_rating;
+	}
+	
+	if(s.ec_ppv)
+	{
+		if(!s.eurocrypt)
+		{
+			fprintf(stderr, "PPV option is only used in conjunction with Eurocrypt.\n");
+			return(-1);
+		}
+		vid_conf.ec_ppv = s.ec_ppv;
+	}
+	
+	if(s.enableemm)
+	{
+		if((s.videocrypt && 
+		!(strcmp(s.videocrypt, "sky07") == 0 ||
+		  strcmp(s.videocrypt, "sky09") == 0)
+		) ||
+		(s.videocrypt2 && !(strcmp(s.videocrypt2, "conditional") == 0)))
+		{
+			fprintf(stderr, "EMMs are currently only supported in sky07, sky09 and Videocrypt 2 mode.\n");
+			return(-1);
+		}
+		
+		vid_conf.enableemm = s.enableemm;
+	}
+	
+	if(s.disableemm)
+	{
+		if((s.videocrypt && 
+		!(strcmp(s.videocrypt, "sky07") == 0 ||
+		  strcmp(s.videocrypt, "sky09") == 0)
+		) ||
+		(s.videocrypt2 && !(strcmp(s.videocrypt2, "conditional") == 0)))
+		{
+			fprintf(stderr, "EMMs are currently only supported in sky07, sky09 and Videocrypt 2 mode.\n");
+			return(-1);
+		}
+		
+		vid_conf.disableemm = s.disableemm;
+	}
+	
+	if(s.showecm)
+	{
+		vid_conf.showecm = s.showecm;
+	}
+	
+	if(s.d11)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_SECAM)
+		{
+			fprintf(stderr, "Discret 11 is only compatible with 625 line PAL modes.\n");
 			return(-1);
 		}
 		
@@ -946,7 +1297,31 @@ int main(int argc, char *argv[])
 			return(-1);
 		}
 		
-		vid_conf.syster = 1;
+		vid_conf.d11 = s.d11;
+		vid_conf.systeraudio = s.systeraudio;
+	}
+	
+	if(s.downmix)
+	{
+		vid_conf.downmix = s.downmix;
+	}
+	
+	if(s.syster || s.systercnr)
+	{
+		if(vid_conf.lines != 625 && vid_conf.colour_mode != VID_PAL)
+		{
+			fprintf(stderr, "Nagravision Syster is only compatible with 625 line PAL modes.\n");
+			return(-1);
+		}
+		
+		if(vid_conf.videocrypt || vid_conf.videocrypt2 || vid_conf.videocrypts || vid_conf.d11)
+		{
+			fprintf(stderr, "Using multiple scrambling modes is not supported.\n");
+			return(-1);
+		}
+		
+		vid_conf.syster = s.syster;
+		vid_conf.systercnr = s.systercnr;
 		vid_conf.systeraudio = s.systeraudio;
 	}
 	
@@ -982,6 +1357,21 @@ int main(int argc, char *argv[])
 		}
 		
 		vid_conf.acp = 1;
+	}
+	
+	if(s.subtitles)
+	{
+		vid_conf.subtitles = s.subtitles;
+	}
+	
+	if(s.txsubtitles)
+	{
+		vid_conf.txsubtitles = s.txsubtitles;
+	}
+
+	if(s.nodate)
+	{
+		vid_conf.nodate = s.nodate;
 	}
 	
 	if(s.vits)
@@ -1028,6 +1418,7 @@ int main(int argc, char *argv[])
 	
 	vid_conf.offset = s.offset;
 	vid_conf.passthru = s.passthru;
+	vid_conf.volume = s.volume;
 	vid_conf.invert_video = s.invert_video;
 	vid_conf.secam_field_id = s.secam_field_id;
 	
@@ -1100,7 +1491,7 @@ int main(int argc, char *argv[])
 			
 			if(strncmp(pre, "test", l) == 0)
 			{
-				r = av_test_open(&s.vid);
+				r = av_test_open(&s.vid, sub);
 			}
 			else if(strncmp(pre, "ffmpeg", l) == 0)
 			{

@@ -17,35 +17,44 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <ctype.h>
 #include "hacktv.h"
-
-/* A small 2-bit hacktv logo */
-#define LOGO_WIDTH  48
-#define LOGO_HEIGHT 9
-#define LOGO_SCALE  4
-static const char *_logo =
-	"                                                "
-	" ##  ##    ##     ####   ##  ##  ######  ##  ## "
-	" ##  ##   ####   ##  ##  ## ##     ##    ##  ## "
-	" ##  ##  ##  ##  ##      ####      ##    ##  ## "
-	" ######  ######  ##      ###       ##    ##  ## "
-	" ##  ##  ##  ##  ##      ####      ##    ##  ## "
-	" ##  ##  ##  ##  ##  ##  ## ##     ##     ####  "
-	" ##  ##  ##  ##   ####   ##  ##    ##      ##   "
-	"                                                ";
+#include "graphics.h"
 
 /* AV test pattern source */
 typedef struct {
-	int width;
-	int height;
+	int vid_width;
+	int vid_height;
 	uint32_t *video;
 	int16_t *audio;
 	size_t audio_samples;
+	int img_width;
+	int img_height;
+	image_t image;
+	av_font_t *font[10];
 } av_test_t;
 
 static uint32_t *_av_test_read_video(void *private, float *ratio)
 {
+	/* Get current time */
+	char timestr[9];
+	time_t secs = time(0);
+	struct tm *local = localtime(&secs);
+	sprintf(timestr, "%02d:%02d:%02d", local->tm_hour, local->tm_min, local->tm_sec);
+	
 	av_test_t *av = private;
+	
+	/* Print clock */
+	if(av->font[0])
+	{
+		print_generic_text(	av->font[0],
+							av->video,
+							timestr,
+							av->font[0]->x_loc, av->font[0]->y_loc, 0, 1, 0, 1);
+	}
+						
 	if(ratio) *ratio = 4.0 / 3.0;
 	return(av->video);
 }
@@ -66,7 +75,18 @@ static int _av_test_close(void *private)
 	return(HACKTV_OK);
 }
 
-int av_test_open(vid_t *s)
+static uint8_t _hamming_bars(int x, int sr, int frequency)
+{
+	double sample, y;
+	
+	y = sr;
+	y = (frequency / y) * x;
+	sample = sin(y * 2 * M_PI) + 1;
+
+	return ((sample * 0xFF) / 2.0);
+}
+
+int av_test_open(vid_t *s, char *test_screen)
 {
 	uint32_t const bars[8] = {
 		0x000000,
@@ -78,10 +98,16 @@ int av_test_open(vid_t *s)
 		0xBFBF00,
 		0xFFFFFF,
 	};
+
+	/* Frequency of the sine-wave for each 'bar' in KHz */
+	uint16_t sine_bars[5] = { 800, 1800, 2800, 3800, 4800 };
+	int sine_bars_pos[5] = { 3, 0, 0, 0, 0 };
+
 	av_test_t *av;
-	int c, x, y;
+	int c, x, y, z;
 	double d;
 	int16_t l;
+	int y_start, y_end, x_start, x_end, start_pos, ycentre_start, ycentre_end;
 	
 	av = calloc(1, sizeof(av_test_t));
 	if(!av)
@@ -90,8 +116,8 @@ int av_test_open(vid_t *s)
 	}
 	
 	/* Generate a basic test pattern */
-	av->width = s->active_width;
-	av->height = s->conf.active_lines;
+	av->vid_width = s->active_width;
+	av->vid_height = s->conf.active_lines;
 	av->video = malloc(vid_get_framebuffer_length(s));
 	if(!av->video)
 	{
@@ -99,6 +125,7 @@ int av_test_open(vid_t *s)
 		return(HACKTV_OUT_OF_MEMORY);
 	}
 	
+	/* Colour bars - for non-625 line modes */
 	for(y = 0; y < s->conf.active_lines; y++)
 	{
 		for(x = 0; x < s->active_width; x++)
@@ -133,21 +160,150 @@ int av_test_open(vid_t *s)
 		}
 	}
 	
-	/* Overlay the logo */
-	if(s->active_width >= LOGO_WIDTH * LOGO_SCALE &&
-	   s->conf.active_lines >= LOGO_HEIGHT * LOGO_SCALE)
+	if(test_screen == NULL) test_screen = "pm5544";
+	
+	float img_ratio = (strcmp(test_screen, "pm5644") == 0) ? 16.0 / 9.0 : 4.0 / 3.0;
+	
+	/* Initialise default fonts */
+	
+	/* Clock */
+	font_init(s, 56, img_ratio);
+	av->font[0] = s->av_font;
+	av->font[0]->x_loc = 50;
+	av->font[0]->y_loc = 50;
+	
+	/* HACKTV text*/
+	font_init(s, 72, img_ratio);
+	av->font[1] = s->av_font;
+	av->font[1]->x_loc = 50;
+	av->font[1]->y_loc = 25;
+	
+	int sr = 20250.0 * (av->vid_width / 1052.0);
+	
+	/* Overlay test screen */
+	if(av->vid_height == 576 && strcmp(test_screen, "colourbars") != 0)
 	{
-		x = s->active_width / 2;
-		y = s->conf.active_lines / 10;
-		
-		for(x = 0; x < LOGO_WIDTH * LOGO_SCALE; x++)
-		{
-			for(y = 0; y < LOGO_HEIGHT * LOGO_SCALE; y++)
+		if(load_png(&av->image, av->vid_width, av->vid_height, test_screen, 1.0, img_ratio, IMG_TEST) == HACKTV_OK)
+		{	
+			overlay_image(av->video, &av->image, av->vid_width, av->vid_height, IMG_POS_FULL);
+			
+			if(strcmp(test_screen, "pm5544") == 0)
 			{
-				c = _logo[y / LOGO_SCALE * LOGO_WIDTH + x / LOGO_SCALE] == ' ' ? 0x000000 : 0xFFFFFF;
+				av->font[0]->y_loc = 82.3;
+
+				y_start = s->conf.active_lines - 270;
+				y_end = s->conf.active_lines - 180;
+				x_start = (s->active_width / 18.0) * 8.5;
+				x_end = (s->active_width / 18.0) * 9.53;
+
+				start_pos = (s->active_width / 8.0) * 1.75;
+
+				ycentre_start = 308;
+				ycentre_end = 354;
 				
-				av->video[(s->conf.active_lines / 10 + y) * s->active_width + ((s->active_width - LOGO_WIDTH * LOGO_SCALE) / 2) + x] = c;
+				/* Generate hamming bars */
+				for(y = 0; y < s->conf.active_lines; y++)
+				{
+					for(x = 0; x < s->active_width; x++)
+					{
+						if((y - 2 > y_start && y < y_end) && !((x > x_start && x < x_end) && y > ycentre_start && y < ycentre_end))
+						{
+							if(x > start_pos - 3 && x < s->active_width - start_pos - 3)
+							{
+								z = x - start_pos;
+								c = 4 - z * 9 / s->active_width;
+								c = _hamming_bars(z - (start_pos * 4) + sine_bars_pos[4 - c], sr, sine_bars[4 - (c < 0 ? 0 : c)]);
+								c = c << 16 | c << 8 | c;
+								av->video[y * s->active_width + x] = c;
+							}				
+						}
+					}
+				}
 			}
+			else if(strcmp(test_screen, "pm5644") == 0)
+			{
+				av->font[0]->y_loc = 82;
+
+				y_start = s->conf.active_lines - 271;
+				y_end = s->conf.active_lines - 181;
+				x_start = (s->active_width / 24.0) * 11.51;
+				x_end = (s->active_width / 24.0) * 12.5;
+				start_pos = (s->active_width / 6.0) * 1.75;
+				ycentre_start = 307;
+				ycentre_end = 349;
+
+				/* Generate hamming bars */
+				for(y = 0; y < s->conf.active_lines; y++)
+				{
+					for(x = 0; x < s->active_width; x++)
+					{
+						if((y - 2 > y_start && y < y_end) && !((x > x_start && x < x_end) && y > ycentre_start && y < ycentre_end))
+						{
+							if(x > start_pos && x < s->active_width - start_pos)
+							{
+								z = x - start_pos;
+								c = 5 - z * ((9 / (4.0/3.0)) * (16.0/9.0)) / s->active_width;
+								c = _hamming_bars(z - (start_pos * 4) + 2, sr, sine_bars[4 - (c < 0 ? 0 : c)]);
+								c = c << 16 | c << 8 | c;
+								av->video[y * s->active_width + x] = c;
+							}				
+						}
+
+						/* Vertical grating */
+						if(y > 181 && y < 393)
+						{
+							if(x > (s->active_width / 24.0) * 1.52 && x < (s->active_width / 24.0) * 2.45)
+							{
+								c = _hamming_bars(y, sr, 1800 - (y * 12));
+								c = c << 16 | c << 8 | c;
+								av->video[y * s->active_width + x] = c;
+							}
+
+							if(x > (s->active_width / 24.0) * 21.56 && x < (s->active_width / 24.0) * 22.47)
+							{
+								c = _hamming_bars(y, sr, 1800 - (y * 12));
+								c = c << 16 | c << 8 | c;
+								av->video[(574 - y) * s->active_width + x] = c;
+							}
+						}
+					}
+				}
+			}
+			else if(strcmp(test_screen, "fubk") == 0)
+			{
+				/* Reinit font with new size */
+				font_init(s, 44, img_ratio);
+				av->font[0] = s->av_font;
+				av->font[0]->x_loc = 52;
+				av->font[0]->y_loc = 55.5;
+			}
+			else if(strcmp(test_screen, "ueitm") == 0)
+			{
+				/* Don't display clock */
+				av->font[0] = NULL;
+			}
+			
+		}
+		else
+		{
+			print_generic_text(	av->font[1], av->video, "HACKTV", av->font[1]->x_loc, av->font[1]->y_loc, 0, 1, 0, 1);
+		}
+	}
+	else
+	{
+		print_generic_text(	av->font[1], av->video, "HACKTV", av->font[1]->x_loc, av->font[1]->y_loc, 0, 1, 0, 1);
+	}
+	
+	/* Print logo, if enabled */
+	if(s->conf.logo)
+	{
+		if(load_png(&s->vid_logo, s->active_width, s->conf.active_lines, s->conf.logo, 0.75, img_ratio, IMG_LOGO) != HACKTV_OK)
+		{
+			s->conf.logo = NULL;
+		}
+		else
+		{
+			overlay_image(av->video, &s->vid_logo, av->vid_width, av->vid_height, s->vid_logo.position);
 		}
 	}
 	
