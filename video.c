@@ -227,18 +227,16 @@ const vid_config_t vid_config_pal_dk = {
 const vid_config_t vid_config_pal_fm = {
 	
 	/* PAL FM (satellite) */
-	.output_type    = HACKTV_INT16_COMPLEX,
+	.output_type    = HACKTV_INT16_REAL,
 	
-	.modulation     = VID_FM,
-	.fm_level       = 1.0,
-	.fm_deviation   = 16e6, /* 16 MHz/V */
+	.level          = 1.0, /* Overall signal level */
 	
-	.level          = 0.8, /* Overall signal level */
-	
-	.video_level    = 1.00, /* Power level of video */
-	// .fm_mono_level  = 0.06, /* FM audio carrier power level */
-	.fm_left_level  = 0.04, /* FM stereo left audio carrier power level */
-	.fm_right_level = 0.04, /* FM stereo right audio carrier power level */
+	.video_level    = 0.75, /* Power level of video */
+	.fm_mono_level  = 0.06, /* FM audio carrier power level */
+	// .fm_left_level  = 0.04, /* FM stereo left audio carrier power level */
+	// .fm_right_level = 0.04, /* FM stereo right audio carrier power level */
+		
+	.video_bw       = 5.5e6,
 	
 	.type           = VID_RASTER_625,
 	.frame_rate_num = 25,
@@ -276,17 +274,17 @@ const vid_config_t vid_config_pal_fm = {
 	.qu_co          = 0.493,
 	.qv_co          = 0.000,
 	
-	// .fm_mono_carrier   = 6500000, /* Hz */
-	// .fm_mono_deviation = 85000, /* +/- Hz */
-	// .fm_mono_preemph   = VID_50US, /* Seconds */
+	.fm_mono_carrier   = 6500000, /* Hz */
+	.fm_mono_deviation = 60000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US, /* Seconds */
 	
-	.fm_left_carrier   = 7020000, /* Hz */
-	.fm_left_deviation = 50000, /* +/- Hz */
-	.fm_left_preemph   = VID_50US, /* Seconds */
+	// .fm_left_carrier   = 7020000, /* Hz */
+	// .fm_left_deviation = 50000, /* +/- Hz */
+	// .fm_left_preemph   = VID_50US, /* Seconds */
 	
-	.fm_right_carrier   = 7200000, /* Hz */
-	.fm_right_deviation = 50000, /* +/- Hz */
-	.fm_right_preemph   = VID_50US, /* Seconds */
+	// .fm_right_carrier   = 7200000, /* Hz */
+	// .fm_right_deviation = 50000, /* +/- Hz */
+	// .fm_right_preemph   = VID_50US, /* Seconds */
 };
 
 const vid_config_t vid_config_pal = {
@@ -3452,11 +3450,8 @@ static int _init_vfilter(vid_t *s)
 	else if(s->conf.modulation == VID_AM ||
 	        s->conf.modulation == VID_NONE)
 	{
-		double taps[51];
-		
-		ntaps = 51;
-		
-		fir_low_pass(taps, ntaps, s->sample_rate, s->conf.video_bw, 0.75e6, 1);
+		const double *taps = fm_625_2025_taps;
+		ntaps = sizeof(fm_625_2025_taps) / sizeof(double);
 		fir_int16_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
 	}
 	
