@@ -214,21 +214,20 @@ int vc_init(vc_t *s, vid_t *vid, const char *mode, const char *mode2)
 	
 	memset(s, 0, sizeof(vc_t));
 	
-		/* Generate the VBI data symbols */
-		s->lut = vbidata_init_step(
-			40,
-			vid->width,
-			round((vid->white_level - vid->black_level) * 1.00),
-			(double) vid->pixel_rate / VC_SAMPLE_RATE * VC_VBI_SAMPLES_PER_BIT,
-			vid->pixel_rate * 375e-9,
-			vid->pixel_rate * 10.86e-6
-		);
+	/* Generate the VBI data symbols */
+	s->lut = vbidata_init_step(
+		40,
+		vid->width,
+		round((vid->white_level - vid->black_level) * 1.00),
+		(double) vid->pixel_rate / VC_SAMPLE_RATE * VC_VBI_SAMPLES_PER_BIT,
+		vid->pixel_rate * 375e-9,
+		vid->pixel_rate * 10.86e-6
+	);
 
-		if(!s->lut)
-		{
-			return(VID_OUT_OF_MEMORY);
-		}
-
+	if(!s->lut)
+	{
+		return(VID_OUT_OF_MEMORY);
+	}
 	
 	for(i = 0; i < 7; i++) s->ppv_card_data[i] = _ppv_card_data[i];
 	
