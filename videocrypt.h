@@ -67,6 +67,9 @@ typedef struct {
 	
 	uint8_t counter;
 	
+	/* VBI data */
+	int16_t *lut;
+	
 	/* VC1 blocks */
 	_vc_block_t *blocks;
 	size_t block;
