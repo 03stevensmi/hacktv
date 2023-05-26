@@ -3448,7 +3448,7 @@ static int _init_vfilter(vid_t *s)
 	else if(s->conf.modulation == VID_AM ||
 	        s->conf.modulation == VID_NONE)
 	{
-		taps = fm_mac_taps;
+		const double *taps = fm_mac_taps;
 		ntaps = sizeof(fm_mac_taps) / sizeof(double);
 		fir_int16_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
 	}
