@@ -1143,11 +1143,7 @@ const vid_config_t vid_config_dmac_am = {
 const vid_config_t vid_config_dmac_fm = {
 	
 	/* D2-MAC FM (Satellite) */
-	.output_type    = HACKTV_INT16_COMPLEX,
-	
-	.modulation     = VID_FM,
-	.fm_level       = 1.0,
-	.fm_deviation   = 13.5e6, /* 13.5 MHz/V */
+	.output_type    = HACKTV_INT16_REAL,
 	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
@@ -1161,7 +1157,7 @@ const vid_config_t vid_config_dmac_fm = {
 	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.0, /* Overall signal level */
-	.video_level    = 1.0, /* Power level of video */
+	.video_level    = 0.75, /* Power level of video */
 	
 	.white_level    =  0.50,
 	.black_level    = -0.50,
@@ -3450,8 +3446,8 @@ static int _init_vfilter(vid_t *s)
 	else if(s->conf.modulation == VID_AM ||
 	        s->conf.modulation == VID_NONE)
 	{
-		const double *taps = fm_625_2025_taps;
-		ntaps = sizeof(fm_625_2025_taps) / sizeof(double);
+		taps = fm_mac_taps;
+		ntaps = sizeof(fm_mac_taps) / sizeof(double);
 		fir_int16_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
 	}
 	
