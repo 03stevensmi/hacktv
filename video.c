@@ -1161,10 +1161,10 @@ const vid_config_t vid_config_dmac_fm = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.00, /* Power level of video */
 	
-	.white_level    =  0.54,
-	.black_level    = -0.54,
-	.blanking_level =  0.04,
-	.sync_level     =  0.04,
+	.white_level    =  0.50+0.2,
+	.black_level    = -0.50+0.2,
+	.blanking_level =  0.00+0.2,
+	.sync_level     =  0.00+0.2,
 	
 	.mac_mode       = MAC_MODE_D,
 	
