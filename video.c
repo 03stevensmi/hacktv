@@ -1159,12 +1159,12 @@ const vid_config_t vid_config_dmac_fm = {
 	.active_width   = 702.0 / MAC_CLOCK_RATE,
 	
 	.level          = 1.0, /* Overall signal level */
-	.video_level    = 0.75, /* Power level of video */
+	.video_level    = 1.00, /* Power level of video */
 	
-	.white_level    =  0.50,
-	.black_level    = -0.50,
-	.blanking_level =  0.00,
-	.sync_level     =  0.00,
+	.white_level    =  0.54,
+	.black_level    = -0.54,
+	.blanking_level =  0.04,
+	.sync_level     =  0.04,
 	
 	.mac_mode       = MAC_MODE_D,
 	
