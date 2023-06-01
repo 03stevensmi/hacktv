@@ -1106,9 +1106,7 @@ const vid_config_t vid_config_d2mac = {
 const vid_config_t vid_config_dmac_am = {
 	
 	/* D-MAC AM */
-	.output_type    = HACKTV_INT16_COMPLEX,
-	
-	.modulation     = VID_AM,
+	.output_type    = HACKTV_INT16_REAL,
 	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
@@ -1161,10 +1159,10 @@ const vid_config_t vid_config_dmac_fm = {
 	.level          = 1.0, /* Overall signal level */
 	.video_level    = 1.00, /* Power level of video */
 	
-	.white_level    =  0.50+0.2,
-	.black_level    = -0.50+0.2,
-	.blanking_level =  0.00+0.2,
-	.sync_level     =  0.00+0.2,
+	.white_level    =  0.50,
+	.black_level    = -0.50,
+	.blanking_level =  0.00,
+	.sync_level     =  0.00,
 	
 	.mac_mode       = MAC_MODE_D,
 	
