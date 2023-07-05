@@ -564,6 +564,11 @@ static void _eurocrypt(uint8_t *data, const uint8_t *key, int desmode, int des_a
 					{
 						s = ((s >> 8) & 0xFF0000L) | ((s << 8) & 0xFF000000L) | (s & 0x0000FFFFL);
 					}
+							
+					/* Rotate halves around */
+					r3 = l ^ s;
+					l = r;
+					r = r3;
 				}
 				break;
 
@@ -603,11 +608,6 @@ static void _eurocrypt(uint8_t *data, const uint8_t *key, int desmode, int des_a
 				}
 				break;
 		}
-		
-		/* Rotate halves around */
-		r3 = l ^ s;
-		l = r;
-		r = r3;
 	}
 	
 	/* Put everything together */
