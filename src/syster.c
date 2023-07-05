@@ -414,9 +414,9 @@ void _render_ng_vbi(ng_t *s, vid_t *vid, vid_line_t *l)
 		vbidata_render(n->lut, n->vbi[n->vbi_seq++], 45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, l);
 		l->vbialloc = 1;
 		
-		if(s->vbi_seq == 10)
+		if(n->vbi_seq == 10)
 		{
-			s->vbi_seq = 0;
+			n->vbi_seq = 0;
 		}
 	}
 }
