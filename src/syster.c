@@ -411,12 +411,12 @@ void _render_ng_vbi(ng_t *s, vid_t *vid, vid_line_t *l)
 		}
 		
 		/* Render the line */
-		vbidata_render(n->lut, n->vbi[n->vbi_seq++], 45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, l);
+		vbidata_render(s->lut, s->vbi[s->vbi_seq++], 45, NG_VBI_BYTES * 8, VBIDATA_LSB_FIRST, l);
 		l->vbialloc = 1;
 		
-		if(n->vbi_seq == 10)
+		if(s->vbi_seq == 10)
 		{
-			n->vbi_seq = 0;
+			s->vbi_seq = 0;
 		}
 	}
 }
