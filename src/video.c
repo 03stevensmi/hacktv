@@ -2608,7 +2608,7 @@ void _test_sample_rate(const vid_config_t *conf, unsigned int sample_rate)
 	m = conf->lines * conf->frame_rate.num;
 	m /= r = gcd(m, conf->frame_rate.den);
 	if(conf->frame_rate.den / r & 1) m *= 2;
-	>frame_r
+	
 	/* Is the chosen sample rate good? */
 	if(sample_rate % m == 0) return;
 	
@@ -3122,8 +3122,6 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 	{
 		for(x = s->burst_left; x < s->burst_left + s->burst_width; x++)
 		{
-			/* Nasty hack for Videocrypt-S */
-			int y = s->conf.videocrypts ? x + 2 : x;
 			l->output[x * 2] += (l->lut_b[x] * s->burst_win[x - s->burst_left]) >> 15;
 		}
 	}
@@ -3140,7 +3138,6 @@ static int _vid_next_line_raster(vid_t *s, void *arg, int nlines, vid_line_t **l
 		
 		sc = 1;
 		vbidata_render(s->fsc_syncs, &sc, 0, 1, VBIDATA_LSB_FIRST, l);
-		}
 	}
 	
 	/* Render the CBS FSC flag */
