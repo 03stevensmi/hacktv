@@ -1,0 +1,67 @@
+--- mac.c	2021-07-14 20:21:35.772994391 +0100
++++ mac-patch.c	2021-07-14 20:19:01.706792740 +0100
+@@ -520,13 +520,24 @@
+ 	struct tm tm;
+ 	int i, mjd;
+ 	
+-	/* Get the timezone offset */
+-	localtime_r(&timestamp, &tm);
+-	i = tm.tm_gmtoff / 1800;
+-	if(i < 0) i = -i | (1 << 5);
++	/* Windows implements localtime differently, using localtime_s rather than localtime_r */
++	#ifndef WIN32
++		/* Get the timezone offset */
++		localtime_r(&timestamp, &tm);
++		i = tm.tm_gmtoff / 1800;
++		if(i < 0) i = -i | (1 << 5);
++		
++		gmtime_r(&timestamp, &tm);
++	#else
++		/* Get the timezone offset */
++		localtime_s(&tm, &timestamp);
++		i = _timezone / 1800;
++		if(i < 0) i = -i | (1 << 5);
++		
++		gmtime_s(&tm, &timestamp);
++	#endif
+ 	
+ 	/* Calculate Modified Julian Date */
+-	gmtime_r(&timestamp, &tm);
+ 	mjd = 367.0 * (1900 + tm.tm_year)
+ 	    - (int) (7.0 * (1900 + tm.tm_year + (int) ((1 + tm.tm_mon + 9.0) / 12.0)) / 4.0)
+ 	    + (int) (275.0 * (1 + tm.tm_mon) / 9.0) + tm.tm_mday - 678987.0;
+ 	    
+--- build_win64.sh			2021-07-14 20:04:49.644053021 +0100
++++ build_win64-fsphil-ubuntu.sh	2021-05-30 16:25:20.000000000 +0100
+@@ -33,7 +33,9 @@
+ 	rm -rf hackrf-2018.01.1/host/libhackrf/build
+ 	mkdir -p hackrf-2018.01.1/host/libhackrf/build
+ 	cd hackrf-2018.01.1/host/libhackrf/build
+-	mingw64-cmake \
++	cmake .. \
++		-DCMAKE_SYSTEM_NAME=Windows \
++		-DCMAKE_C_COMPILER=$HOST-gcc \
+ 		-DCMAKE_INSTALL_PREFIX=$PREFIX \
+ 		-DCMAKE_INSTALL_LIBPREFIX=$PREFIX/lib \
+ 		-DLIBUSB_INCLUDE_DIR=$PREFIX/include/libusb-1.0 \
+@@ -53,7 +55,9 @@
+ 	rm -rf osmo-fl2k/build
+ 	mkdir -p osmo-fl2k/build
+ 	cd osmo-fl2k/build
+-	mingw64-cmake \
++	cmake .. \
++		-DCMAKE_SYSTEM_NAME=Windows \
++		-DCMAKE_C_COMPILER=$HOST-gcc \
+ 		-DCMAKE_INSTALL_PREFIX=$PREFIX \
+ 		-DCMAKE_INSTALL_LIBPREFIX=$PREFIX \
+ 		-DCMAKE_INSTALL_LIBDIR=$PREFIX/lib \
+@@ -85,7 +89,7 @@
+ 	fi
+ 	
+ 	cd opus-1.3
+-	./configure --host=$HOST --prefix=$PREFIX --enable-static --disable-shared --disable-doc --disable-extra-programs
++	./configure CFLAGS='-D_FORTIFY_SOURCE=0' --host=$HOST --prefix=$PREFIX --enable-static --disable-shared --disable-doc --disable-extra-programs
+ 	make -j4 install
+ 	cd ..
+ fi
+    
