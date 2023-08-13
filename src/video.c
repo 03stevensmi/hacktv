@@ -226,14 +226,14 @@ const vid_config_t vid_config_pal_fm = {
 	.modulation     = VID_FM,
 	.fm_level       = 1.0,
 	.fm_deviation   = 16e6, /* 16 MHz/V */
-	//.fm_energy_dispersal = 0.0625, /* 1 MHz deviation (2 MHz p-p) */
+	.fm_energy_dispersal = 0.0625, /* 1 MHz deviation (2 MHz p-p) */
 	
 	.level          = 0.8, /* Overall signal level */
 	
 	.video_level    = 1.00, /* Power level of video */
-	// .fm_mono_level  = 0.06, /* FM audio carrier power level */
-	.fm_left_level  = 0.04, /* FM stereo left audio carrier power level */
-	.fm_right_level = 0.04, /* FM stereo right audio carrier power level */
+	.fm_mono_level  = 0.06, /* FM audio carrier power level */
+	// .fm_left_level  = 0.04, /* FM stereo left audio carrier power level */
+	// .fm_right_level = 0.04, /* FM stereo right audio carrier power level */
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
@@ -269,17 +269,17 @@ const vid_config_t vid_config_pal_fm = {
 	.qu_co          = 0.493,
 	.qv_co          = 0.000,
 	
-	// .fm_mono_carrier   = 6500000, /* Hz */
-	// .fm_mono_deviation = 85000, /* +/- Hz */
-	// .fm_mono_preemph   = VID_50US, /* Seconds */
+	.fm_mono_carrier   = 6500000, /* Hz */
+	.fm_mono_deviation = 60000, /* +/- Hz */
+	.fm_mono_preemph   = VID_50US, /* Seconds */
 	
-	.fm_left_carrier   = 7020000, /* Hz */
-	.fm_left_deviation = 50000, /* +/- Hz */
-	.fm_left_preemph   = VID_50US, /* Seconds */
+	// .fm_left_carrier   = 7020000, /* Hz */
+	// .fm_left_deviation = 50000, /* +/- Hz */
+	// .fm_left_preemph   = VID_50US, /* Seconds */
 	
-	.fm_right_carrier   = 7200000, /* Hz */
-	.fm_right_deviation = 50000, /* +/- Hz */
-	.fm_right_preemph   = VID_50US, /* Seconds */
+	// .fm_right_carrier   = 7200000, /* Hz */
+	// .fm_right_deviation = 50000, /* +/- Hz */
+	// .fm_right_preemph   = VID_50US, /* Seconds */
 };
 
 const vid_config_t vid_config_pal = {
