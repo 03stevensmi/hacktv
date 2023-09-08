@@ -41,8 +41,8 @@
 #include "rf_fl2k.h"
 #endif
 
-volatile int _abort = 0;
-volatile int _signal = 0;
+static volatile sig_atomic_t _abort = 0;
+static volatile sig_atomic_t _signal = 0;
 
 static void _sigint_callback_handler(int signum)
 {
@@ -1033,12 +1033,22 @@ int main(int argc, char *argv[])
 	}
 	
 	/* Catch all the signals */
+#ifndef _WIN32
+	struct sigaction action = { .sa_handler = _sigint_callback_handler };
+	sigaction(SIGINT, &action, NULL);
+	sigaction(SIGILL, &action, NULL);
+	sigaction(SIGFPE, &action, NULL);
+	sigaction(SIGSEGV, &action, NULL);
+	sigaction(SIGTERM, &action, NULL);
+	sigaction(SIGABRT, &action, NULL);
+#else
 	signal(SIGINT, &_sigint_callback_handler);
 	signal(SIGILL, &_sigint_callback_handler);
 	signal(SIGFPE, &_sigint_callback_handler);
 	signal(SIGSEGV, &_sigint_callback_handler);
 	signal(SIGTERM, &_sigint_callback_handler);
 	signal(SIGABRT, &_sigint_callback_handler);
+#endif
 	
 	memcpy(&vid_conf, vid_confs->conf, sizeof(vid_config_t));
 	
