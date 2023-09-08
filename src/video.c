@@ -1233,9 +1233,9 @@ const vid_config_t vid_config_d2mac = {
 const vid_config_t vid_config_dmac_am = {
 	
 	/* D-MAC AM */
-	.output_type    = HACKTV_INT16_COMPLEX,
-	
-	.modulation     = VID_AM,
+	.output_type    = HACKTV_INT16_REAL,
+
+	.video_bw       = 8.4e6,
 	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
@@ -1267,11 +1267,9 @@ const vid_config_t vid_config_dmac_am = {
 const vid_config_t vid_config_dmac_fm = {
 	
 	/* D2-MAC FM (Satellite) */
-	.output_type    = HACKTV_INT16_COMPLEX,
-	
-	.modulation     = VID_FM,
-	.fm_level       = 1.0,
-	.fm_deviation   = 13.5e6, /* 13.5 MHz/V */
+	.output_type    = HACKTV_INT16_REAL,
+
+	.video_bw       = 8.4e6,
 	
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
@@ -3502,9 +3500,8 @@ static int _init_vfilter(vid_t *s)
 	else if(s->conf.modulation == VID_AM ||
 	        s->conf.modulation == VID_NONE)
 	{
-		double taps[51];
-		
-		ntaps = 51;
+		const double *taps = fm_mac_taps;
+		ntaps = sizeof(fm_mac_taps) / sizeof(double);
 		
 		fir_low_pass(taps, ntaps, s->sample_rate, s->conf.video_bw, 0.75e6, 1);
 		fir_int16_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
