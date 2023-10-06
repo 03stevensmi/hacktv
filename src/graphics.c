@@ -51,7 +51,7 @@ const pngs_t png_logos[] = {
 	{ "foxkids",        _png_foxkids,        IMG_POS_TL, sizeof(_png_foxkids) },
 	{ "tmf",            _png_tmf,            IMG_POS_TR, sizeof(_png_tmf) },
 	{ "tmc2",           _png_tmc2,           IMG_POS_BL, sizeof(_png_tmc2) },
-	{ "disney",         _png_disney,         IMG_POS_BL, sizeof(_png_disney) },
+	{ "disney",         _png_disney,         IMG_POS_TR, sizeof(_png_disney) },
 	{ NULL,             NULL,                0,          0 }
 };
 
