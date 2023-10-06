@@ -39,7 +39,7 @@ const pngs_t png_logos[] = {
 	{ "skyone",         _png_skyone,         IMG_POS_TL, sizeof(_png_skyone) },
 	{ "sky",            _png_sky,            IMG_POS_BR, sizeof(_png_sky) },
 	{ "klass",          _png_klass,          IMG_POS_TR, sizeof(_png_klass) },
-	{ "stc",            _png_stc,            IMG_POS_TR, sizeof(_png_stc) },o
+	{ "stc",            _png_stc,            IMG_POS_TR, sizeof(_png_stc) },
 	{ "channelv",       _png_v,              IMG_POS_TL, sizeof(_png_v) },
 	{ "retemia",        _png_retemia,        IMG_POS_TR, sizeof(_png_retemia) },
 	{ "vtv4",           _png_vtv4,           IMG_POS_TR, sizeof(_png_vtv4) },
