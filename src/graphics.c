@@ -38,6 +38,19 @@ const pngs_t png_logos[] = {
 	{ "multichoice",    _png_multichoice,    IMG_POS_TR, sizeof(_png_multichoice) },
 	{ "skyone",         _png_skyone,         IMG_POS_TL, sizeof(_png_skyone) },
 	{ "sky",            _png_sky,            IMG_POS_BR, sizeof(_png_sky) },
+	{ "klass",          _png_klass,          IMG_POS_TR, sizeof(_png_klass) },
+	{ "stc",            _png_stc,            IMG_POS_TR, sizeof(_png_stc) },o
+	{ "channelv",       _png_v,              IMG_POS_TL, sizeof(_png_v) },
+	{ "retemia",        _png_retemia,        IMG_POS_TR, sizeof(_png_retemia) },
+	{ "vtv4",           _png_vtv4,           IMG_POS_TR, sizeof(_png_vtv4) },
+	{ "xtv",            _png_xtv,            IMG_POS_TR, sizeof(_png_xtv) },
+	{ "xtv2",           _png_xtv2,           IMG_POS_TR, sizeof(_png_xtv2) },
+	{ "xtv3",           _png_xtv3,           IMG_POS_TR, sizeof(_png_xtv3) },
+	{ "spacetoon",      _png_spacetoon,      IMG_POS_TR, sizeof(_png_spacetoon) },
+	{ "viva",           _png_viva,           IMG_POS_TR, sizeof(_png_viva) },
+	{ "foxkids",        _png_foxkids,        IMG_POS_TL, sizeof(_png_foxkids) },
+	{ "tmf",            _png_tmf,            IMG_POS_TR, sizeof(_png_tmf) },
+	{ "tmc2",           _png_tmc2,           IMG_POS_BL, sizeof(_png_tmc2) },
 	{ NULL,             NULL,                0,          0 }
 };
 
