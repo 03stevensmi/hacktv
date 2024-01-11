@@ -65,9 +65,9 @@ static void _callback(fl2k_data_info_t *data_info)
 	rf->out = i;
 	
 	data_info->sampletype_signed = 0;
-	data_info->r_buf = (char *) rf->buffer_r[rf->out];
-	data_info->g_buf = (char *) rf->buffer_g[rf->out];
-	data_info->b_buf = NULL;
+	data_info->g_buf = (char *) rf->buffer_r[rf->out];
+	data_info->b_buf = (char *) rf->buffer_g[rf->out];
+	data_info->r_buf = NULL;
 }
 
 static int _rf_write(void *private, int16_t *iq_data, size_t samples)
