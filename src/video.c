@@ -1268,7 +1268,7 @@ const vid_config_t vid_config_dmac_am = {
 const vid_config_t vid_config_dmac_fm = {
 	
 	/* D2-MAC FM (Satellite) */
-	.output_type    = HACKTV_INT16_REAL,
+	.output_type    = RF_INT16_REAL,
 
 	.video_bw       = 8.4e6,
 	
