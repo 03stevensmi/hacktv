@@ -64,6 +64,7 @@ static void print_usage(void)
 		"  -G, --gamma <value>            Override the mode's gamma correction value.\n"
 		"  -i, --interlace                Update image each field instead of each frame.\n"
 		"  -r, --repeat                   Repeat the inputs forever.\n"
+		"      --shuffle                  Randomly shuffle the inputs.\n"
 		"  -p, --position <value>         Set start position of video in minutes.\n"
 		"  -v, --verbose                  Enable verbose output.\n"
 		"      --logo <path>              Overlay picture logo over video.\n"
@@ -460,6 +461,7 @@ enum {
 	_OPT_PIXELRATE,
 	_OPT_LIST_MODES,
 	_OPT_JSON,
+	_OPT_SHUFFLE,
 };
 
 int main(int argc, char *argv[])
@@ -477,6 +479,7 @@ int main(int argc, char *argv[])
 		{ "gamma",          required_argument, 0, 'G' },
 		{ "interlace",      no_argument,       0, 'i' },
 		{ "repeat",         no_argument,       0, 'r' },
+		{ "shuffle",        no_argument,       0, _OPT_SHUFFLE },
 		{ "verbose",        no_argument,       0, 'v' },
 		{ "teletext",       required_argument, 0, _OPT_TELETEXT },
 		{ "wss",            required_argument, 0, _OPT_WSS },
@@ -577,6 +580,7 @@ int main(int argc, char *argv[])
 	s.gamma = -1;
 	s.interlace = 0;
 	s.repeat = 0;
+	s.shuffle = 0;
 	s.verbose = 0;
 	s.teletext = NULL;
 	s.position = 0;
@@ -726,6 +730,10 @@ int main(int argc, char *argv[])
 		
 		case 'r': /* -r, --repeat */
 			s.repeat = 1;
+			break;
+		
+		case _OPT_SHUFFLE: /* --shuffle */
+			s.shuffle = 1;
 			break;
 		
 		case 'v': /* -v, --verbose */
@@ -1523,6 +1531,20 @@ int main(int argc, char *argv[])
 	
 	do
 	{
+			if(s.shuffle)
+		{
+			/* Shuffle the input source list */
+			/* Avoids moving the last entry to the start
+			 * to prevent it repeating immediately */
+			for(c = optind; c < argc - 1; c++)
+			{
+				l = c + (rand() % (argc - c - (c == optind ? 1 : 0)));
+				pre = argv[c];
+				argv[c] = argv[l];
+				argv[l] = pre;
+			}
+		}
+		
 		for(c = optind; c < argc && !_abort; c++)
 		{
 			/* Get a pointer to the output prefix and target */
