@@ -43,6 +43,7 @@ typedef struct {
 	float gamma;
 	int interlace;
 	int repeat;
+	int shuffle;
 	int verbose;
 	char *d11;
 	char *systercnr;
