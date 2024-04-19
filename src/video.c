@@ -64,6 +64,7 @@ const vid_config_t vid_config_pal_i = {
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -119,6 +120,7 @@ const vid_config_t vid_config_pal_bg = {
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -174,6 +176,7 @@ const vid_config_t vid_config_pal_dk = {
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -232,6 +235,7 @@ const vid_config_t vid_config_pal_fm = {
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -287,6 +291,7 @@ const vid_config_t vid_config_pal = {
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -334,6 +339,7 @@ const vid_config_t vid_config_pal_m = {
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001, },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -385,6 +391,7 @@ const vid_config_t vid_config_pal_n = {
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -431,6 +438,7 @@ const vid_config_t vid_config_525pal = {
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -479,6 +487,7 @@ const vid_config_t vid_config_secam_l = {
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -530,6 +539,7 @@ const vid_config_t vid_config_secam_dk = {
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -583,6 +593,7 @@ const vid_config_t vid_config_secam_i = {
 
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -635,6 +646,7 @@ const vid_config_t vid_config_secam_bg = {
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -686,6 +698,7 @@ const vid_config_t vid_config_secam_fm = {
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -739,6 +752,7 @@ const vid_config_t vid_config_secam = {
 	
 	.type           = VID_RASTER_625,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -784,6 +798,7 @@ const vid_config_t vid_config_ntsc_m = {
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -836,6 +851,7 @@ const vid_config_t vid_config_ntsc_i = {
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -892,6 +908,7 @@ const vid_config_t vid_config_ntsc_fm = {
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -951,6 +968,7 @@ const vid_config_t vid_config_ntsc_bs_fm = {
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -997,6 +1015,7 @@ const vid_config_t vid_config_ntsc = {
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -1045,6 +1064,7 @@ const vid_config_t vid_config_pal60_i = {
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -1095,6 +1115,7 @@ const vid_config_t vid_config_pal60 = {
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -1137,6 +1158,7 @@ const vid_config_t vid_config_d2mac_am = {
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1173,6 +1195,7 @@ const vid_config_t vid_config_d2mac_fm = {
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1207,6 +1230,7 @@ const vid_config_t vid_config_d2mac = {
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1241,6 +1265,7 @@ const vid_config_t vid_config_dmac_am = {
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1277,6 +1302,7 @@ const vid_config_t vid_config_dmac_fm = {
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1311,6 +1337,7 @@ const vid_config_t vid_config_dmac = {
 	.type           = VID_MAC,
 	.chid           = 0xE8B5,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 }, { 16, 9 } },
 	.lines          = 625,
 	.hline          = 313,
 	
@@ -1350,6 +1377,7 @@ const vid_config_t vid_config_819_e = {
 	
 	.type           = VID_RASTER_819,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 819,
 	.hline          = 409,
 	
@@ -1386,6 +1414,7 @@ const vid_config_t vid_config_819 = {
 	
 	.type           = VID_RASTER_819,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 819,
 	.hline          = 409,
 	
@@ -1421,6 +1450,7 @@ const vid_config_t vid_config_405_a = {
 	
 	.type           = VID_RASTER_405,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.hline          = 203,
 	
@@ -1462,6 +1492,7 @@ const vid_config_t vid_config_405_a_ntsc = {
 	
 	.type           = VID_RASTER_405,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.hline          = 203,
 	
@@ -1512,6 +1543,7 @@ const vid_config_t vid_config_405_i = {
 	
 	.type           = VID_RASTER_405,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.hline          = 203,
 	
@@ -1549,6 +1581,7 @@ const vid_config_t vid_config_405 = {
 	
 	.type           = VID_RASTER_405,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.hline          = 203,
 	
@@ -1583,6 +1616,7 @@ const vid_config_t vid_config_405_ntsc = {
 	
 	.type           = VID_RASTER_405,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.hline          = 203,
 	
@@ -1625,6 +1659,7 @@ const vid_config_t vid_config_baird_240_am = {
 	
 	.type           = VID_BAIRD_240,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 240,
 	
 	.active_lines   = 220,
@@ -1654,6 +1689,7 @@ const vid_config_t vid_config_baird_240 = {
 	
 	.type           = VID_BAIRD_240,
 	.frame_rate     = { 25, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 240,
 	
 	.active_lines   = 220,
@@ -1685,6 +1721,8 @@ const vid_config_t vid_config_baird_30_am = {
 	
 	.type           = VID_BAIRD_30,
 	.frame_rate     = { 25, 2 }, /* 12.5 Hz */
+	.frame_aspects  = { { 3, 7 } },
+	.frame_orientation = VID_ROTATE_270 | VID_HFLIP,
 	.lines          = 30,
 	
 	.active_lines   = 30,
@@ -1711,6 +1749,8 @@ const vid_config_t vid_config_baird_30 = {
 	
 	.type           = VID_BAIRD_30,
 	.frame_rate     = { 25, 2 }, /* 12.5 Hz */
+	.frame_aspects  = { { 3, 7 } },
+	.frame_orientation = VID_ROTATE_270 | VID_HFLIP,
 	.lines          = 30,
 	
 	.active_lines   = 30,
@@ -1739,6 +1779,8 @@ const vid_config_t vid_config_nbtv_32_am = {
 	
 	.type           = VID_NBTV_32,
 	.frame_rate     = { 25, 2 }, /* 12.5 Hz */
+	.frame_aspects  = { { 2, 3 } },
+	.frame_orientation = VID_ROTATE_270 | VID_HFLIP,
 	.lines          = 32,
 	
 	.active_lines   = 32,
@@ -1767,6 +1809,8 @@ const vid_config_t vid_config_nbtv_32 = {
 	
 	.type           = VID_NBTV_32,
 	.frame_rate     = { 25, 2 }, /* 12.5 Hz */
+	.frame_aspects  = { { 2, 3 } },
+	.frame_orientation = VID_ROTATE_270 | VID_HFLIP,
 	.lines          = 32,
 	
 	.active_lines   = 32,
@@ -1800,6 +1844,7 @@ const vid_config_t vid_config_apollo_colour_fm = {
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -1846,6 +1891,7 @@ const vid_config_t vid_config_apollo_colour = {
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 525,
 	.hline          = 263,
 	
@@ -1888,6 +1934,7 @@ const vid_config_t vid_config_apollo_mono_fm = {
 	
 	.type           = VID_APOLLO_320,
 	.frame_rate     = { 10, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 320,
 	.active_lines   = 312,
 	.active_width   = 0.00028250, /* 282.5µs */
@@ -1931,6 +1978,7 @@ const vid_config_t vid_config_apollo_mono = {
 	
 	.type           = VID_APOLLO_320,
 	.frame_rate     = { 10, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 320,
 	.active_lines   = 312,
 	.active_width   = 0.00028250, /* 282.5µs */
@@ -1976,6 +2024,7 @@ const vid_config_t vid_config_cbs405_m = {
 	
 	.type           = VID_CBS_405,
 	.frame_rate     = { 72, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.hline          = 203,
 	
@@ -2017,6 +2066,7 @@ const vid_config_t vid_config_cbs405 = {
 	
 	.type           = VID_CBS_405,
 	.frame_rate     = { 72, 1 },
+	.frame_aspects  = { { 4, 3 } },
 	.lines          = 405,
 	.hline          = 203,
 	
