@@ -52,9 +52,7 @@ extern int rf_close(rf_t *s);
 
 #include "rf_file.h"
 
-#ifdef HAVE_HACKRF
 #include "rf_hackrf.h"
-#endif
 
 #ifdef HAVE_SOAPYSDR
 #include "rf_soapysdr.h"
