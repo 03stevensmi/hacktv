@@ -486,8 +486,6 @@ enum {
 	_OPT_FIT,
 	_OPT_MIN_ASPECT,
 	_OPT_MAX_ASPECT,
-	_OPT_LETTERBOX,
-	_OPT_PILLARBOX,
 };
 
 int main(int argc, char *argv[])
@@ -508,7 +506,7 @@ int main(int argc, char *argv[])
 		{ "min-aspect",     required_argument, 0, _OPT_MIN_ASPECT },
 		{ "max-aspect",     required_argument, 0, _OPT_MAX_ASPECT },
 		{ "letterbox",      no_argument,       0, _OPT_LETTERBOX },
-		{ "pillarbox",      no_argument,       0, _OPT_PILLARBOX },
+		{ "pillar",      no_argument,       0, _OPT_PILLARBOX },
 		{ "repeat",         no_argument,       0, 'r' },
 		{ "shuffle",        no_argument,       0, _OPT_SHUFFLE },
 		{ "verbose",        no_argument,       0, 'v' },
@@ -816,14 +814,6 @@ int main(int argc, char *argv[])
 		
 		case _OPT_WSS: /* --wss <mode> */
 			s.wss = optarg;
-			break;
-			
-		case _OPT_LETTERBOX: /* --letterbox */
-			s.letterbox = 1;
-			break;
-			
-		case _OPT_PILLARBOX: /* --pillarbox */
-			s.pillarbox = 1;
 			break;
 		
 		case _OPT_VIDEOCRYPT: /* --videocrypt */
