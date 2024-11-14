@@ -219,11 +219,11 @@ const vid_config_t vid_config_pal_dk = {
 const vid_config_t vid_config_pal_fm = {
 	
 	/* PAL FM (satellite) */
-	.output_type    = RF_INT16_COMPLEX,
+	.output_type    = RF_INT16_REAL,
 	
-	.modulation     = VID_FM,
-	.fm_level       = 1.0,
-	.fm_deviation   = 16e6, /* 16 MHz/V */
+	//.modulation     = VID_FM,
+	//.fm_level       = 1.0,
+	//.fm_deviation   = 16e6, /* 16 MHz/V */
 	//.fm_energy_dispersal = 0.0625, /* 1 MHz deviation (2 MHz p-p) */
 	
 	.level          = 0.8, /* Overall signal level */
@@ -683,11 +683,11 @@ const vid_config_t vid_config_secam_bg = {
 const vid_config_t vid_config_secam_fm = {
 	
 	/* SECAM FM (satellite) */
-	.output_type    = RF_INT16_COMPLEX,
+	.output_type    = RF_INT16_REAL,
 	
-	.modulation     = VID_FM,
-	.fm_level       = 1.0,
-	.fm_deviation   = 16e6, /* 16 MHz/V */
+	//.modulation     = VID_FM,
+	//.fm_level       = 1.0,
+	//.fm_deviation   = 16e6, /* 16 MHz/V */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -893,11 +893,11 @@ const vid_config_t vid_config_ntsc_i = {
 const vid_config_t vid_config_ntsc_fm = {
 	
 	/* NTSC FM (satellite) */
-	.output_type    = RF_INT16_COMPLEX,
+	.output_type    = RF_INT16_REAL,
 	
-	.modulation     = VID_FM,
-	.fm_level       = 1.0,
-	.fm_deviation   = 16e6, /* 16 MHz/V */
+	//.modulation     = VID_FM,
+	//.fm_level       = 1.0,
+	//.fm_deviation   = 16e6, /* 16 MHz/V */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -955,11 +955,11 @@ const vid_config_t vid_config_ntsc_fm = {
 const vid_config_t vid_config_ntsc_bs_fm = {
 	
 	/* Digital Subcarrier/NTSC FM (satellite) */
-	.output_type    = RF_INT16_COMPLEX,
+	.output_type    = RF_INT16_REAL,
 	
-	.modulation     = VID_FM,
-	.fm_level       = 1.0,
-	.fm_deviation   = 17.0e6, /* 17.0 MHz/V */
+	//.modulation     = VID_FM,
+	//.fm_level       = 1.0,
+	//.fm_deviation   = 17.0e6, /* 17.0 MHz/V */
 	
 	.level          = 1.0, /* Overall signal level */
 	
@@ -1832,15 +1832,15 @@ const vid_config_t vid_config_nbtv_32 = {
 const vid_config_t vid_config_apollo_colour_fm = {
 	
 	/* Unified S-Band, Apollo Colour Lunar Television */
-	.output_type    = RF_INT16_COMPLEX,
+	.output_type    = RF_INT16_REAL,
 	
 	.level          = 1.000, /* Overall signal level */
 	.video_level    = 1.000, /* Power level of video */
 	.fm_mono_level  = 0.150, /* Power level of audio */
 	
-	.modulation     = VID_FM,
-	.fm_level       = 1.0,
-	.fm_deviation   = 2e6, /* 2 MHz/V */
+	//.modulation     = VID_FM,
+	//.fm_level       = 1.0,
+	//.fm_deviation   = 2e6, /* 2 MHz/V */
 	
 	.type           = VID_RASTER_525,
 	.frame_rate     = { 30000, 1001 },
@@ -3727,11 +3727,8 @@ static int _init_vfilter(vid_t *s)
 	else if(s->conf.modulation == VID_AM ||
 	        s->conf.modulation == VID_NONE)
 	{
-		double taps[51];
-		
-		ntaps = 51;
-		
-		fir_low_pass(taps, ntaps, s->sample_rate, s->conf.video_bw, 0.75e6, 1);
+		const double *taps = fm_625_2025_taps;
+		ntaps = sizeof(fm_625_2025_taps) / sizeof(double);
 		fir_int16_init(&p->fir, taps, ntaps, 1, 1, _calc_filter_delay(width, ntaps));
 	}
 	
