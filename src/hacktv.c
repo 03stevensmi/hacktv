@@ -502,6 +502,7 @@ enum {
 	_OPT_LETTERBOX,
 	_OPT_PILLARBOX,
 	_OPT_FL2K_AUDIO,
+	_OPT_THREADS,
 	_OPT_VERSION,
 };
 
@@ -602,6 +603,7 @@ int main(int argc, char *argv[])
 		{ "volume",         required_argument, 0, _OPT_VOLUME },
 		{ "fl2k-audio",     required_argument, 0, _OPT_FL2K_AUDIO },
 		{ "showecm",        no_argument,       0, _OPT_SHOW_ECM },
+		{ "threads",        no_argument,       0, _OPT_THREADS },
 		{ "version",        no_argument,       0, _OPT_VERSION },
 		{ 0,                0,                 0,  0  }
 	};
@@ -1194,6 +1196,10 @@ int main(int argc, char *argv[])
 			
 			break;
 		
+		case _OPT_THREADS: /* --threads */
+			s.threads_test = 1;
+			break;
+		
 		case _OPT_VERSION: /* --version */
 			print_version();
 			return(0);
@@ -1655,6 +1661,11 @@ int main(int argc, char *argv[])
 	vid_conf.raw_bb_white_level = s.raw_bb_white_level;
 	vid_conf.secam_field_id = s.secam_field_id;
 	vid_conf.secam_field_id_lines = s.secam_field_id_lines;
+	
+	if(s.threads_test)
+	{
+		vid_conf.threads_test = 1;
+	}
 	
 	/* Setup video encoder */
 	r = vid_init(&s.vid, s.samplerate, s.pixelrate, &vid_conf);
